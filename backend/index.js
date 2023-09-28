@@ -9,7 +9,7 @@ const app = express()
 const port = 4001
 
 app.use(cors({
-  origin: ["i-note-book-deploy-frontend.vercel.app/"],
+  origin: ["https://i-note-book-deploy-frontend.vercel.app"],
   methods: ["POST" , "GET" , "PUT" , "DELETE"]
 }));
 app.use(express.json())
