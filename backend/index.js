@@ -10,7 +10,8 @@ const port = 4001
 
 app.use(cors({
   origin: ["https://i-note-book-deploy-frontend.vercel.app/"],
-  methods: ["POST" , "GET" , "PUT" , "DELETE"]
+  methods: ["POST" , "GET" , "PUT" , "DELETE"] ,
+  credentials: true
 }));
 app.use(express.json())
 
