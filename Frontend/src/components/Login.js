@@ -9,7 +9,7 @@ const Login = (props) => {
 
     const handleSubmit = async (eve)=>{
         eve.preventDefault();
-        const response = await fetch(`http://localhost:4001/api/auth/login`, {
+        const response = await fetch(`https://i-note-book-deploy.vercel.app/api/auth/login`, {
             method: 'POST', // *GET, POST, PUT, DELETE, etc.
             headers: {
               'Content-Type': 'application/json',
