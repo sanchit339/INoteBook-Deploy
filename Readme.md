@@ -1,6 +1,6 @@
 # Note-Taking Web App
 
-![App Screenshot](screenshot.png)
+![App Screenshot](ui.png)
 
 ## Overview
 
@@ -22,7 +22,7 @@ This is a web-based note-taking application that allows users to create, update,
 
 ## Technologies Used
 
-- **Frontend**: HTML, CSS, JavaScript, React.js
+- **Frontend**: Bootstrap, JavaScript, React.js
 
 - **Backend**: Node.js, Express.js
 
@@ -45,7 +45,7 @@ Follow these steps to get the app up and running on your local machine.
 1. Clone the repository (if you have Git installed):
 
    ```bash
-   git clone https://github.com/your-username/your-note-app.git
+   git clone https://github.com/sanchit339/inotebook
 
 # Your Note-Taking Web App
 
@@ -77,29 +77,10 @@ To run this project locally, follow these steps:
 
 4. **Configuration**:
 
-    Create a `.env` file in the root directory and set the following environment variables:
+    Since I have deployed it you can check the deployment 
 
-    ```makefile
-    PORT=3000
-    MONGODB_URI=your_mongodb_uri
-    SECRET_KEY=your_secret_key
-    ```
+    Once go through the code to get the idea of deployment
 
-    Replace `your_mongodb_uri` with your MongoDB connection URI and `your_secret_key` with a secret key for JWT token generation.
-
-5. **Running the App**:
-
-    Start the server:
-
-    ```bash
-    npm start
-    ```
-
-    The server will start on port 3000 by default. You can change the port in the `.env` file.
-
-6. **Access the App**:
-
-    Open a web browser and go to `http://localhost:3000` to use the app.
 
 ## Usage
 
@@ -114,7 +95,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Technologies Used
 
-- Frontend: HTML, CSS, JavaScript, React.js
+- Frontend: Bootstrap, JavaScript, React.js
 - Backend: Node.js, Express.js
 - Database: MongoDB
 - Authentication: JWT (JSON Web Tokens)
@@ -129,4 +110,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-If you have any questions or feedback, feel free to contact us at your-email@example.com.
+If you have any questions or feedback, feel free to contact us at sanchitingale339@gmail.com
