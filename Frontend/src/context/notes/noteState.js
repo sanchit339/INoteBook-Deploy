@@ -2,7 +2,7 @@ import { useState } from "react";
 import NoteContext from "./noteContext";
 
 const NoteState = (props) =>{
-    const host = "http://localhost:4001"
+    const host = "https://i-note-book-deploy.vercel.app"
     // updating the note initial with the fetch api
     const notesInitial = []
     const[notes , setNotes ] = useState(notesInitial); 
