@@ -34,10 +34,10 @@ const About = () => {
   return (
     <div className="futuristic-template">
       <h2>About Me</h2>
-      <p>Hii I am Jahid Desai Thanks for visiting</p>
+      <p>Hii I am Sanchit Ingale Thanks for visiting</p>
 
       <div className="links-container">
-        {/* {socialLinks.map((link, index) => (
+        {socialLinks.map((link, index) => (
           <a
             key={index}
             href={link.url}
@@ -48,7 +48,7 @@ const About = () => {
             <div className="link-icon">{link.icon}</div>
             <div className="link-name">{link.name}</div>
           </a>
-        ))} */}
+        ))}
       </div>
     </div>
   );
