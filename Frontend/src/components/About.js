@@ -37,7 +37,7 @@ const About = () => {
   const fetchDownloadCount = async () => {
     const owner = "sanchit339"; // Replace with your GitHub username
     const repo = "swadhaya8thclass"; // Replace with your repository name
-    const url = `https://api.github.com/repos/sanchit339/swadhaya8thclass/releases`;
+    const url = `https://api.github.com/repos/${owner}/${repo}/releases`;
 
     try {
       const response = await fetch(url);
@@ -81,18 +81,63 @@ const About = () => {
         ))}
       </div>
 
-      {/* Add app visit link */}
-      <div className="app-visit">
-        <h3>Visit My App</h3>
+      {/* Add app visit link with inline styling */}
+      <div
+        style={{
+          marginTop: '30px',
+          padding: '20px',
+          backgroundColor: '#1a1a1a',
+          borderRadius: '10px',
+          textAlign: 'center',
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)',
+          color: '#f5f5f5'
+        }}
+      >
+        <h3
+          style={{
+            fontSize: '24px',
+            marginBottom: '15px',
+            color: '#00ffcc',
+            textShadow: '2px 2px 5px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          Visit My App
+        </h3>
         <a
           href="https://github.com/sanchit339/swadhaya8thclass/releases"
           target="_blank"
           rel="noopener noreferrer"
-          className="app-link"
+          style={{
+            display: 'inline-block',
+            padding: '10px 20px',
+            backgroundColor: '#00ffcc',
+            color: '#000',
+            textDecoration: 'none',
+            borderRadius: '5px',
+            fontSize: '18px',
+            transition: 'background-color 0.3s ease, transform 0.3s ease',
+            boxShadow: '0px 4px 8px rgba(0, 255, 204, 0.6)',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#00e6b8';
+            e.target.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#00ffcc';
+            e.target.style.transform = 'scale(1)';
+          }}
         >
           Download the App
         </a>
-        <p>Total Downloads: {downloadCount}</p>
+        <p
+          style={{
+            marginTop: '10px',
+            fontSize: '16px',
+            color: '#f5f5f5',
+          }}
+        >
+          Total Downloads: {downloadCount}
+        </p>
       </div>
     </div>
   );
