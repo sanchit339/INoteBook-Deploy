@@ -64,7 +64,7 @@ const About = () => {
   return (
     <div className="futuristic-template">
       <h2>About Me</h2>
-      <p>Hii I am Sanchit Ingale Thanks for visiting</p>
+      <p>Hii, I am Sanchit Ingale. Thanks for visiting!</p>
 
       <div className="links-container">
         {socialLinks.map((link, index) => (
@@ -81,7 +81,24 @@ const About = () => {
         ))}
       </div>
 
-      {/* Add app visit link with inline styling */}
+      {/* Embedded YouTube Video */}
+      <div className="video-container" style={{ marginTop: '30px', textAlign: 'center' }}>
+        <h3 style={{ color: '#00ffcc', textShadow: '2px 2px 5px rgba(0, 0, 0, 0.5)' }}>
+          Check out my Video!
+        </h3>
+        <iframe
+          width="560"
+          height="315"
+          src="https://www.youtube.com/embed/b0XI-cbel1U"
+          title="YouTube Video"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ borderRadius: '10px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.2)' }}
+        ></iframe>
+      </div>
+
+      {/* App Download Section */}
       <div
         style={{
           marginTop: '30px',
