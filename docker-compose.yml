@@ -1,0 +1,57 @@
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:7
+    container_name: inotebook-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=inotebook
+    networks:
+      - inotebook-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: inotebook-backend
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/inotebook
+      - PORT=4001
+      - JWT_SECRET=${JWT_SECRET:-inotebook_super_secret_key_change_in_production_2026}
+    depends_on:
+      - mongo
+    networks:
+      - inotebook-network
+    command: node index.js
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_BACKEND_URL=http://localhost:4001
+    container_name: inotebook-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - inotebook-network
+
+networks:
+  inotebook-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
