@@ -13,10 +13,17 @@ const ENCRYPTION_KEY_NAME = 'cloudnote_encryption_key';
 const STORAGE_KEY_PREFIX = 'cloudnote_encrypted_';
 
 /**
+ * Check if we're in a browser environment
+ */
+const isBrowser = () => typeof window !== 'undefined';
+
+/**
  * Generate a random AES-256 encryption key
  * @returns {Promise<CryptoKey>} AES-GCM encryption key
  */
 export const generateEncryptionKey = async () => {
+    if (!isBrowser()) return null;
+
     const key = await window.crypto.subtle.generateKey(
         {
             name: 'AES-GCM',
@@ -34,6 +41,8 @@ export const generateEncryptionKey = async () => {
  * @param {CryptoKey} key - The encryption key to store
  */
 export const storeEncryptionKey = async (key) => {
+    if (!isBrowser()) return;
+
     try {
         const exported = await window.crypto.subtle.exportKey('jwk', key);
         sessionStorage.setItem(ENCRYPTION_KEY_NAME, JSON.stringify(exported));
@@ -48,6 +57,8 @@ export const storeEncryptionKey = async (key) => {
  * @returns {Promise<CryptoKey|null>} The encryption key or null if not found
  */
 export const getEncryptionKey = async () => {
+    if (!isBrowser()) return null;
+
     try {
         const stored = sessionStorage.getItem(ENCRYPTION_KEY_NAME);
         if (!stored) return null;
@@ -72,6 +83,8 @@ export const getEncryptionKey = async () => {
  * @returns {Promise<CryptoKey>} The encryption key
  */
 export const initializeEncryption = async () => {
+    if (!isBrowser()) return null;
+
     let key = await getEncryptionKey();
     if (!key) {
         key = await generateEncryptionKey();
@@ -86,8 +99,11 @@ export const initializeEncryption = async () => {
  * @returns {Promise<string>} Base64 encoded encrypted data
  */
 export const encryptData = async (data) => {
+    if (!isBrowser()) return null;
+
     try {
         const key = await initializeEncryption();
+        if (!key) return null;
 
         // Convert data to JSON string then to ArrayBuffer
         const jsonString = JSON.stringify(data);
@@ -127,6 +143,8 @@ export const encryptData = async (data) => {
  * @returns {Promise<any>} Decrypted and parsed data
  */
 export const decryptData = async (encryptedData) => {
+    if (!isBrowser()) return null;
+
     try {
         const key = await getEncryptionKey();
         if (!key) {
@@ -166,9 +184,13 @@ export const decryptData = async (encryptedData) => {
  * @param {any} data - Data to encrypt and store
  */
 export const saveEncrypted = async (key, data) => {
+    if (!isBrowser()) return;
+
     try {
         const encrypted = await encryptData(data);
-        localStorage.setItem(`${STORAGE_KEY_PREFIX}${key}`, encrypted);
+        if (encrypted) {
+            localStorage.setItem(`${STORAGE_KEY_PREFIX}${key}`, encrypted);
+        }
     } catch (error) {
         console.error('Failed to save encrypted data:', error);
         throw error;
@@ -181,6 +203,8 @@ export const saveEncrypted = async (key, data) => {
  * @returns {Promise<any|null>} Decrypted data or null if not found
  */
 export const loadEncrypted = async (key) => {
+    if (!isBrowser()) return null;
+
     try {
         const encrypted = localStorage.getItem(`${STORAGE_KEY_PREFIX}${key}`);
         if (!encrypted) return null;
@@ -198,6 +222,7 @@ export const loadEncrypted = async (key) => {
  * Clear encryption key (call on logout or when user wants to clear session)
  */
 export const clearEncryptionKey = () => {
+    if (!isBrowser()) return;
     sessionStorage.removeItem(ENCRYPTION_KEY_NAME);
 };
 
@@ -205,6 +230,8 @@ export const clearEncryptionKey = () => {
  * Clear all encrypted data from localStorage
  */
 export const clearAllEncryptedData = () => {
+    if (!isBrowser()) return;
+
     const keys = Object.keys(localStorage);
     keys.forEach(key => {
         if (key.startsWith(STORAGE_KEY_PREFIX)) {
@@ -218,6 +245,8 @@ export const clearAllEncryptedData = () => {
  * @returns {Promise<boolean>} True if encryption is ready
  */
 export const isEncryptionAvailable = async () => {
+    if (!isBrowser()) return false;
+
     try {
         if (!window.crypto || !window.crypto.subtle) {
             return false;
