@@ -33,9 +33,8 @@ const NavBar = () => {
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
               <li className="nav-item">
                 <Link
-                  className={`nav-link ${
-                    location.pathname === "/" ? "active" : ""
-                  }`}
+                  className={`nav-link ${location.pathname === "/" ? "active" : ""
+                    }`}
                   to="/"
                 >
                   Home
@@ -43,9 +42,8 @@ const NavBar = () => {
               </li>
               <li className="nav-item">
                 <Link
-                  className={`nav-link ${
-                    location.pathname === "/about" ? "active" : ""
-                  }`}
+                  className={`nav-link ${location.pathname === "/about" ? "active" : ""
+                    }`}
                   to="/about"
                 >
                   About
@@ -53,12 +51,11 @@ const NavBar = () => {
               </li>
               <li className="nav-item">
                 <Link
-                  className={`nav-link ${
-                    location.pathname.startsWith("/code") ? "active" : ""
-                  }`}
+                  className={`nav-link ${location.pathname.startsWith("/code") ? "active" : ""
+                    }`}
                   to="/code"
                 >
-                  Code Viewer
+                  Resources
                 </Link>
               </li>
             </ul>
