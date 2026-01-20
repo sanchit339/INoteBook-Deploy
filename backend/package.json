@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "engines": {
-    "node": "25.x"
+    "node": "24.x"
   },
   "author": "",
   "license": "ISC",
