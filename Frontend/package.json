@@ -14,7 +14,9 @@
     "react-router-dom": "^6.7.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4",
-    "react-syntax-highlighter": "^15.5.0"
+    "react-syntax-highlighter": "^15.5.0",
+    "react-markdown": "^8.0.7",
+    "remark-gfm": "^3.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -23,7 +25,7 @@
     "eject": "react-scripts eject"
   },
   "engines": {
-    "node": "24.x"
+    "node": "25.x"
   },
   "eslintConfig": {
     "extends": [
