@@ -43,31 +43,31 @@ const NoteState = (props) => {
   }
   // delete note
   const deleteNote = async (id) => {
-    // todo api call
-    const response = await fetch(`${host}/api/notes/deletenote/${id}`, {
-      method: 'DELETE', // *GET, POST, PUT, DELETE, etc.
+    // API call to delete note
+    await fetch(`${host}/api/notes/deletenote/${id}`, {
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
         'auth-token': localStorage.getItem('token')
       }
     });
-    // Response handled, no need to parse json
+    // Update local state
     const newNote = notes.filter((note) => { return note._id !== id });
     setNotes(newNote)
   }
 
   // edit the note
   const editNote = async (id, title, description, tag) => {
-    // api call  (bought from fetch api with header)
-    const response = await fetch(`${host}/api/notes/updateNote/${id}`, {
-      method: 'PUT', // *GET, POST, PUT, DELETE, etc.
+    // API call to update note
+    await fetch(`${host}/api/notes/updateNote/${id}`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'auth-token': localStorage.getItem('token')
       },
-      body: JSON.stringify({ title, description, tag }) // body data type must match "Content-Type" header
+      body: JSON.stringify({ title, description, tag })
     });
-    // Response handled, updating local state
+    // Update local state
     let newNotes = JSON.parse(JSON.stringify(notes));
     // logic 
     for (let index = 0; index < notes.length; index++) {
