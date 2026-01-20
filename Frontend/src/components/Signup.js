@@ -10,8 +10,7 @@ const Signup = (props) => {
 
   const handleSubmit = async (eve) => {
     eve.preventDefault();
-    // destructuring (remove it form the credential)
-    const { name, email, password } = credentail;
+    // API call without destructuring since variables were unused
     const response = await fetch(`${backendUrl}/api/auth/createUser`, {
       method: 'POST', // *GET, POST, PUT, DELETE, etc.
       headers: {

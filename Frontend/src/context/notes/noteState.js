@@ -51,8 +51,7 @@ const NoteState = (props) => {
         'auth-token': localStorage.getItem('token')
       }
     });
-    const json = response.json(); // parses JSON response into native JavaScript objects
-    // console.log(json);
+    // Response handled, no need to parse json
     const newNote = notes.filter((note) => { return note._id !== id });
     setNotes(newNote)
   }
@@ -68,8 +67,7 @@ const NoteState = (props) => {
       },
       body: JSON.stringify({ title, description, tag }) // body data type must match "Content-Type" header
     });
-    const json = await response.json(); // parses JSON response into native JavaScript objects
-    // console.log(json);
+    // Response handled, updating local state
     let newNotes = JSON.parse(JSON.stringify(notes));
     // logic 
     for (let index = 0; index < notes.length; index++) {
