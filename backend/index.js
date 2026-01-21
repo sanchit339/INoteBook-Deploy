@@ -11,12 +11,14 @@ const port = process.env.PORT || 4001
 
 app.use(cors({
   origin: "*",
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'auth-token']
 }));
-// app.use(cors({
-//   origin: [`https://i-note-book-deploy-frontend.vercel.app`],
-//   methods: ["POST" , "GET" , "PUT" , "DELETE"] ,
-//   credentials: true
-// }));
+
+// Handle preflight requests
+app.options('*', cors());
+
 app.use(express.json())
 
 app.get('/', (req, res) => {
@@ -25,6 +27,7 @@ app.get('/', (req, res) => {
 // avaliable routes
 app.use('/api/auth', require('./Routes/auth'))
 app.use('/api/notes', require('./Routes/notes'))
+app.use('/api/github', require('./Routes/github'))
 
 app.listen(port, () => {
   console.log(`iNoteBook app listening on port ${port}`)
