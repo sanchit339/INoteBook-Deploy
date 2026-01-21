@@ -19,8 +19,14 @@ const NoteState = (props) => {
       },
     });
     const json = await response.json()
-    // console.log(json)
-    setNotes(json)
+    // Ensure we only set notes if response is valid array
+    if (Array.isArray(json)) {
+      setNotes(json)
+    } else {
+      // API returned error (e.g., 401), keep notes as empty array
+      console.error('Failed to fetch notes:', json);
+      setNotes([]);
+    }
   }
 
   // the methods will be followed from here 
