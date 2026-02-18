@@ -1,18 +1,16 @@
-import React from 'react'
+import React from 'react';
 
-export default function Alerts(props) {
-  // if(word === 'danger'){
-  //   word = 'error'
-  // }
-  const capatlize = (word) => {
-      const lower = word.toLowerCase();
-      return lower.charAt(0).toUpperCase() + lower.slice(1);
+export default function Alert({ alert }) {
+  if (!alert) {
+    return <div className="alert-shell" />;
   }
+
   return (
-      < div style={{height : '50px'}}>
-        {props.alert && <div className={`alert alert-${props.alert.type} alert-dismissible fade show`} role="alert">
-        <strong>{capatlize(props.alert.type)}</strong>:{props.alert.msg}
-        </div>}
-        </div>
-  )
+    <div className="alert-shell">
+      <div className={`alert-chip ${alert.type === 'danger' ? 'is-danger' : 'is-success'}`}>
+        <strong>{alert.type === 'danger' ? 'Error' : 'Success'}</strong>
+        <span>{alert.msg}</span>
+      </div>
+    </div>
+  );
 }

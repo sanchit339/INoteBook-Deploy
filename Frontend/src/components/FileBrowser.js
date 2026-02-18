@@ -320,10 +320,10 @@ const FileBrowser = () => {
         <input
           type="text"
           className="repo-input"
-          placeholder="Enter resource path (e.g., team/docs)"
+          placeholder="Enter repository path (e.g., owner/repo)"
           value={repoInput}
           onChange={(e) => setRepoInput(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && loadRepository()}
+          onKeyDown={(e) => e.key === 'Enter' && loadRepository()}
           disabled={loading}
         />
         <button
@@ -331,11 +331,11 @@ const FileBrowser = () => {
           onClick={loadRepository}
           disabled={loading}
         >
-          {loading ? '⏳ Loading...' : '➕ Load'}
+          {loading ? 'Loading...' : 'Load'}
         </button>
         {encryptionReady && (
           <div className="encryption-badge" title="Data is encrypted in browser storage">
-            🔒 Secure
+            Encrypted
           </div>
         )}
       </div>
@@ -365,7 +365,7 @@ const FileBrowser = () => {
       {/* Error Display */}
       {error && (
         <div className="error-message">
-          ⚠️ {error}
+          {error}
         </div>
       )}
 
@@ -375,7 +375,7 @@ const FileBrowser = () => {
           {/* File Tree */}
           <div className="file-tree">
             <div className="tree-header">
-              <h3>📁 {repos[activeRepoIndex].fullName}</h3>
+              <h3>{repos[activeRepoIndex].fullName}</h3>
               <small>Branch: {repos[activeRepoIndex].branch}</small>
             </div>
             <div className="tree-content">
@@ -388,7 +388,7 @@ const FileBrowser = () => {
             {selectedFile ? (
               <>
                 <div className="file-header">
-                  <h4>📝 {selectedFile.path}</h4>
+                  <h4>{selectedFile.path}</h4>
                 </div>
                 <div className="code-content">
                   {selectedFile.path.toLowerCase().endsWith('.md') ? (
@@ -434,16 +434,16 @@ const FileBrowser = () => {
               </>
             ) : (
               <div className="empty-state">
-                <p>👈 Select a file to view its content</p>
+                <p>Select a file to view its content.</p>
               </div>
             )}
           </div>
         </div>
       ) : (
         <div className="welcome-state">
-          <h2>📂 Resource Library</h2>
-          <p>Browse project documentation and resources</p>
-          <small>Enter path to load content</small>
+          <h2>Repository Library</h2>
+          <p>Load a repository and browse files in one clean workspace.</p>
+          <small>Use format: owner/repo</small>
         </div>
       )}
     </div>

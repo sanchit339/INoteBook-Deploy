@@ -1,39 +1,363 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+.app-shell {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.page-container {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 1.2rem auto 3rem;
+}
+
+.top-nav {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 1rem auto 0;
+  padding: 0.8rem 0.95rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  gap: 1rem;
 }
 
-.App-link {
-  color: #61dafb;
+.top-nav__brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.top-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  color: var(--ink-strong);
+  letter-spacing: -0.02em;
+}
+
+.top-nav__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.14);
+}
+
+.top-nav__tag {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.top-nav__links {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  justify-self: center;
+  background: #f6faff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.25rem;
+}
+
+.top-nav__link {
+  color: var(--ink-soft);
+  padding: 0.42rem 0.82rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.top-nav__link.is-active {
+  background: #ffffff;
+  color: var(--ink-strong);
+  border: 1px solid var(--line);
+}
+
+.top-nav__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.top-nav__actions .btn-primary,
+.top-nav__actions .btn-ghost {
+  font-size: 0.86rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.alert-shell {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0.6rem auto 0;
+  min-height: 46px;
+}
+
+.alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  border: 1px solid;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.88rem;
+}
+
+.alert-chip.is-success {
+  background: #ecfdf5;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.alert-chip.is-danger {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+.home-layout {
+  display: grid;
+  grid-template-columns: 1.25fr 0.85fr;
+  gap: 1rem;
+}
+
+.home-hero,
+.home-side {
+  padding: 1.4rem;
+}
+
+.home-kicker {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.35rem 0.62rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: #1d4ed8;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.home-cta-row {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.home-side ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1rem;
+  color: var(--ink-mid);
+}
+
+.home-side li {
+  margin: 0.5rem 0;
+}
+
+.notes-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.notes-panel {
+  padding: 1.2rem;
+}
+
+.notes-panel h2 {
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+}
+
+.notes-form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.notes-form label {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink-mid);
+}
+
+.notes-form .btn-primary {
+  justify-self: flex-start;
+}
+
+.notes-list-panel {
+  padding-top: 1rem;
+}
+
+.notes-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.notes-list-head p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.notes-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.note-card {
+  padding: 0.95rem;
+}
+
+.note-card__head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.note-card__head h4 {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.note-card p {
+  color: var(--ink-mid);
+  margin-top: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.note-card__actions {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.icon-btn {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink-mid);
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+}
+
+.icon-btn:hover {
+  border-color: #93b3fa;
+  color: #1d4ed8;
+}
+
+.icon-btn.danger:hover {
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.note-tag {
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #ebf2ff;
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem;
+}
+
+.edit-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.edit-dialog {
+  width: min(620px, 100%);
+  padding: 1.2rem;
+}
+
+.edit-dialog h3 {
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+}
+
+.edit-dialog__actions {
+  margin-top: 0.9rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.auth-layout {
+  display: grid;
+  place-items: center;
+  padding: 1rem 0;
+}
+
+.auth-card {
+  width: min(540px, 100%);
+  padding: 1.3rem;
+}
+
+.auth-card h2 {
+  margin-top: 0;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.85rem;
+}
+
+.auth-form label {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink-mid);
+}
+
+.auth-form .btn-primary {
+  margin-top: 0.25rem;
+}
+
+.auth-foot {
+  margin: 0.8rem 0 0;
+  color: var(--ink-soft);
+}
+
+.auth-foot a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+@media (max-width: 960px) {
+  .top-nav {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
-  to {
-    transform: rotate(360deg);
+
+  .top-nav__brand-wrap,
+  .top-nav__actions,
+  .top-nav__links {
+    justify-self: stretch;
+  }
+
+  .top-nav__actions {
+    justify-content: flex-end;
+  }
+
+  .home-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .page-container,
+  .top-nav,
+  .alert-shell {
+    width: min(1180px, calc(100% - 1rem));
   }
 }
-

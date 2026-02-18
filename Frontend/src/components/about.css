@@ -1,28 +1,51 @@
-  .links-container {
-    display: flex;
-    flex-direction: column;
+.about-layout {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 1rem;
+}
+
+.about-hero,
+.about-links {
+  padding: 1.4rem;
+}
+
+.about-links h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.links-container {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.8rem 0.95rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.link-item:hover {
+  transform: translateY(-2px);
+  border-color: #9cb8f7;
+}
+
+.link-icon {
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.link-name {
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .about-layout {
+    grid-template-columns: 1fr;
   }
-  
-  .link-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    text-decoration: none;
-    color: #333;
-  }
-  
-  .link-item:hover .link-name,
-  .link-item:hover .link-icon {
-    color: #f5f5f5;  /* Change color on hover */
-  }
-  
-  .link-name {
-    font-weight: bold;
-    transition: color 0.3s ease; /* Add transition property for smooth effect */
-  }
-  
-  .link-icon {
-    margin-right: 10px;
-    transition: color 0.3s ease; /* Add transition property for smooth effect */
-  }
-  
+}

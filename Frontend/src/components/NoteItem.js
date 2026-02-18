@@ -1,27 +1,41 @@
-import React , {useContext} from 'react'
+import React, { useContext } from 'react';
+import { FaRegPenToSquare, FaRegTrashCan } from 'react-icons/fa6';
 import noteContext from '../context/notes/noteContext';
 
-
-const NoteItem = (props) => { // as we created the props in notes
+const NoteItem = ({ note, updateNote, showAlert }) => {
   const context = useContext(noteContext);
-  const {deleteNote} = context;
-  const {note , updateNote} = props;
+  const { deleteNote } = context;
 
   return (
-    // from the note we are de structuring the the values like the title etc
-    <div className='col-md-3'>
-      <div className='card my-3' >
-        <div className="card-body">
-            <div className='d-flex align-items-center'>
-            <h5 className="card-title">{note.title}</h5>
-            <i className="fa-solid fa-trash-can mx-2" onClick={()=>{deleteNote(note._id);props.showAlert("Deleted Successfully" , "success");}}></i>
-            <i className="fa-solid fa-pen-to-square mx-2" onClick={()=> {updateNote(note);}}></i>
+    <article className="card note-card">
+      <div className="note-card__head">
+        <h4>{note.title}</h4>
+        <div className="note-card__actions">
+          <button
+            className="icon-btn"
+            onClick={() => {
+              updateNote(note);
+            }}
+            aria-label="Edit note"
+          >
+            <FaRegPenToSquare />
+          </button>
+          <button
+            className="icon-btn danger"
+            onClick={() => {
+              deleteNote(note._id);
+              showAlert('Deleted successfully', 'success');
+            }}
+            aria-label="Delete note"
+          >
+            <FaRegTrashCan />
+          </button>
         </div>
-        <p className="card-text">{note.description}</p>
-        </div>
-    </div>
-    </div>
-  )
-}
+      </div>
+      <p>{note.description}</p>
+      <span className="note-tag">#{note.tag || 'general'}</span>
+    </article>
+  );
+};
 
-export default NoteItem
+export default NoteItem;
