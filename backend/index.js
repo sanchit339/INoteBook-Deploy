@@ -8,16 +8,32 @@ connectToMongo();
 const app = express()
 const port = process.env.PORT || 4001
 
+const allowedOrigins = [
+  'https://i-note-book-deploy-frontend.vercel.app',
+  'https://i-note-book-deploy.vercel.app',
+  'http://localhost:3000'
+];
 
-app.use(cors({
-  origin: "*",
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser clients and same-origin requests with no Origin header
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('CORS not allowed for this origin'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'auth-token']
-}));
+};
 
-// Handle preflight requests
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json())
 
