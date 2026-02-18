@@ -1,8 +1,9 @@
 import { useState } from "react";
 import NoteContext from "./noteContext";
+import { getApiBase } from "../../utils/apiBase";
 
 const NoteState = (props) => {
-  const host = process.env.REACT_APP_BACKEND_URL || "http://localhost:4001"
+  const host = getApiBase()
   // updating the note initial with the fetch api
   const notesInitial = []
   const [notes, setNotes] = useState(notesInitial);

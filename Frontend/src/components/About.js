@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaLinkedin, FaGithub, FaInstagram, FaCode } from 'react-icons/fa';
 import './about.css';
 
@@ -31,6 +31,9 @@ const socialLinks = [
 ];
 
 const About = () => {
+  const [videoId, setVideoId] = useState('b0XI-cbel1U');
+  const [inputVideoId, setInputVideoId] = useState('');
+
   return (
     <section className="about-layout">
       <article className="card about-hero">
@@ -57,6 +60,38 @@ const About = () => {
               <span className="link-name">{link.name}</span>
             </a>
           ))}
+        </div>
+      </article>
+
+      <article className="card about-video">
+        <h3>Video Spotlight</h3>
+        <p className="section-subtitle">Paste a YouTube video ID and preview it here.</p>
+        <div className="video-controls">
+          <input
+            type="text"
+            placeholder="e.g. b0XI-cbel1U"
+            value={inputVideoId}
+            onChange={(event) => setInputVideoId(event.target.value)}
+          />
+          <button
+            className="btn-primary"
+            onClick={() => {
+              if (inputVideoId.trim()) {
+                setVideoId(inputVideoId.trim());
+              }
+            }}
+          >
+            Load video
+          </button>
+        </div>
+        <div className="video-frame-wrap">
+          <iframe
+            src={`https://www.youtube.com/embed/${videoId}`}
+            title="YouTube Video"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
         </div>
       </article>
     </section>

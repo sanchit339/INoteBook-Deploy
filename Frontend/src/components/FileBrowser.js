@@ -10,6 +10,7 @@ import {
   loadEncrypted,
   isEncryptionAvailable
 } from '../utils/cryptoUtils';
+import { getApiBase } from '../utils/apiBase';
 
 const FileBrowser = () => {
   const [repos, setRepos] = useState([]); // Array of loaded repos
@@ -22,7 +23,7 @@ const FileBrowser = () => {
   const [expandedFolders, setExpandedFolders] = useState(new Set());
   const [encryptionReady, setEncryptionReady] = useState(false);
 
-  const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:4001';
+  const API_BASE = getApiBase();
 
   // Initialize encryption and load saved repositories
   useEffect(() => {

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getApiBase } from '../utils/apiBase';
 
 const Login = ({ showAlert }) => {
   const [credential, setCredential] = useState({ email: '', password: '' });
-  const backendUrl =
-    process.env.REACT_APP_API_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:4001';
+  const backendUrl = getApiBase();
 
   const history = useNavigate();
 
@@ -24,7 +24,7 @@ const Login = ({ showAlert }) => {
       showAlert('Logged in successfully', 'success');
       history('/');
     } else {
-      showAlert('Invalid credentials', 'danger');
+      showAlert(json.error || 'Invalid credentials', 'danger');
     }
   };
 
