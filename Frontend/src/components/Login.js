@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { getApiBase } from '../utils/apiBase';
+import { logClientEvent } from '../utils/clientLogger';
 
 const Login = (props) => {
     // make the use of useState Hook
@@ -11,6 +12,12 @@ const Login = (props) => {
 
     const handleSubmit = async (eve) => {
         eve.preventDefault();
+        const email = credentail.email.trim().toLowerCase();
+        await logClientEvent({
+            event: 'login_submit',
+            message: 'User submitted login form',
+            meta: { email }
+        });
         try {
             const response = await fetch(`${backendUrl}/api/auth/login`, {
                 method: 'POST', // *GET, POST, PUT, DELETE, etc.
@@ -18,21 +25,38 @@ const Login = (props) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    email: credentail.email.trim().toLowerCase(),
+                    email,
                     password: credentail.password
                 })
             });
             const json = await response.json();
             // save the auth token and redirect (if success) 
             if (response.ok && json.success) {
+                await logClientEvent({
+                    event: 'login_success',
+                    message: 'User login succeeded',
+                    meta: { email, status: response.status }
+                });
                 localStorage.setItem('token', json.authtoken);  // here we are saving the token in DB
                 props.showAlert("Logged in Successfully", "success")
                 // to redirect we use use history hook
                 history("/");
             } else {
+                await logClientEvent({
+                    level: 'warn',
+                    event: 'login_failed',
+                    message: json.error || 'Invalid credential',
+                    meta: { email, status: response.status }
+                });
                 props.showAlert(json.error || "Invalid Credential", "danger")
             }
         } catch (error) {
+            await logClientEvent({
+                level: 'error',
+                event: 'login_network_error',
+                message: error.message || 'Network error',
+                meta: { email }
+            });
             props.showAlert("Unable to reach server. Please try again.", "danger")
         }
 

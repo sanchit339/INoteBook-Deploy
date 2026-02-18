@@ -15,16 +15,25 @@ router.post('/createUser', [
 ],
   async (req, res) => {                  // has request and response ( status for the end user)
     let success = false;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const name = String(req.body.name || '').trim();
+    console.log('[auth:create:start]', JSON.stringify({ reqId: req.reqId || '', email }));
     // if there are errors return bad request and the errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('[auth:create:validation_failed]', JSON.stringify({
+        reqId: req.reqId || '',
+        email,
+        firstError: errors.array()[0]?.msg || 'validation failed',
+      }));
       return res.status(400).json({ success, error: errors.array()[0].msg, errors: errors.array() });
     }
 
     try {
       // check the user with email is present already 
-      let user = await User.findOne({ email: req.body.email });
+      let user = await User.findOne({ email });
       if (user) {
+        console.log('[auth:create:already_exists]', JSON.stringify({ reqId: req.reqId || '', email }));
         return res.status(400).json({ success, error: "sorry the user already exists" })
       }
 
@@ -38,9 +47,9 @@ router.post('/createUser', [
 
       // creating a new user 
       user = await User.create({  // taken from the user
-        name: req.body.name,
+        name,
         password: secPass,
-        email: req.body.email,
+        email,
       });
 
       const data = {
@@ -50,10 +59,11 @@ router.post('/createUser', [
       }
       const authtoken = jwt.sign(data, JWT_SECRET);
       success = true;
+      console.log('[auth:create:success]', JSON.stringify({ reqId: req.reqId || '', email, userId: user.id }));
       res.json({ success, authtoken });
       // catch all the other error (coz if not cought send the custom one)
     } catch (error) {
-      console.error(error.message);
+      console.error('[auth:create:error]', JSON.stringify({ reqId: req.reqId || '', email, message: error.message }));
       res.status(500).send("some error occured");
     }
   })
@@ -68,21 +78,28 @@ router.post('/login', [
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('[auth:login:validation_failed]', JSON.stringify({
+      reqId: req.reqId || '',
+      firstError: errors.array()[0]?.msg || 'validation failed',
+    }));
     return res.status(400).json({ success, error: errors.array()[0].msg, errors: errors.array() });
   }
   // at this stage the user has filled the usesr id and password 
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
+  console.log('[auth:login:start]', JSON.stringify({ reqId: req.reqId || '', email }));
   try {
     let user = await User.findOne({ email }); // find one email form the user database
     if (!user) {
       success = false;
+      console.log('[auth:login:user_not_found]', JSON.stringify({ reqId: req.reqId || '', email }));
       return res.status(400).json({ success, error: "please enter correct credentials" }); // send status and message dont use specific info {user doesnot exists incorrect email}
     }
     // now authenticate the password 
     const comparePassword = await bcrypt.compare(password, user.password);
     if (!comparePassword) {
       success = false;
+      console.log('[auth:login:password_mismatch]', JSON.stringify({ reqId: req.reqId || '', email }));
       return res.status(400).json({ success, error: "please enter correct credentials" });
     }
     const data = {
@@ -92,10 +109,11 @@ router.post('/login', [
     }
     const authtoken = jwt.sign(data, JWT_SECRET);
     success = true;
+    console.log('[auth:login:success]', JSON.stringify({ reqId: req.reqId || '', email, userId: user.id }));
     res.json({ success, authtoken });
 
   } catch (error) {
-    console.error(error.message);
+    console.error('[auth:login:error]', JSON.stringify({ reqId: req.reqId || '', email, message: error.message }));
     res.status(500).send("some error occured");
   }
 });

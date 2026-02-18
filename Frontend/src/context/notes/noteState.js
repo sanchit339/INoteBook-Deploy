@@ -1,6 +1,7 @@
 import { useState } from "react";
 import NoteContext from "./noteContext";
 import { getApiBase } from "../../utils/apiBase";
+import { logClientEvent } from "../../utils/clientLogger";
 
 const NoteState = (props) => {
   const host = getApiBase()
@@ -26,6 +27,12 @@ const NoteState = (props) => {
     } else {
       // API returned error (e.g., 401), keep notes as empty array
       console.error('Failed to fetch notes:', json);
+      await logClientEvent({
+        level: 'warn',
+        event: 'notes_fetch_failed',
+        message: json?.error || 'Failed to fetch notes',
+        meta: { status: response.status }
+      });
       setNotes([]);
     }
   }

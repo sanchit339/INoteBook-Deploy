@@ -11,6 +11,7 @@ import {
   isEncryptionAvailable
 } from '../utils/cryptoUtils';
 import { getApiBase } from '../utils/apiBase';
+import { logClientEvent } from '../utils/clientLogger';
 
 const FileBrowser = () => {
   const [repos, setRepos] = useState([]); // Array of loaded repos
@@ -92,12 +93,23 @@ const FileBrowser = () => {
 
     setLoading(true);
     setError(null);
+    await logClientEvent({
+      event: 'repo_load_start',
+      message: 'Repository load requested',
+      meta: { repo: trimmedInput }
+    });
 
     try {
       // Fetch repository metadata
       const repoResponse = await fetch(`${API_BASE}/api/github/repo/${owner}/${repo}`);
       if (!repoResponse.ok) {
         const errorData = await repoResponse.json();
+        await logClientEvent({
+          level: 'warn',
+          event: 'repo_load_failed',
+          message: errorData.error || 'Failed to fetch repository metadata',
+          meta: { repo: trimmedInput, status: repoResponse.status }
+        });
         throw new Error(errorData.error || 'Failed to fetch repository');
       }
       const repoData = await repoResponse.json();
@@ -106,6 +118,12 @@ const FileBrowser = () => {
       const treeResponse = await fetch(`${API_BASE}/api/github/tree/${owner}/${repo}/${repoData.defaultBranch}`);
       if (!treeResponse.ok) {
         const errorData = await treeResponse.json();
+        await logClientEvent({
+          level: 'warn',
+          event: 'repo_tree_failed',
+          message: errorData.error || 'Failed to fetch repository tree',
+          meta: { repo: trimmedInput, status: treeResponse.status }
+        });
         throw new Error(errorData.error || 'Failed to fetch file tree');
       }
       const treeData = await treeResponse.json();
@@ -127,12 +145,23 @@ const FileBrowser = () => {
       setRepoInput('');
       setSelectedFile(null);
       setExpandedFolders(new Set());
+      await logClientEvent({
+        event: 'repo_load_success',
+        message: 'Repository loaded',
+        meta: { repo: trimmedInput, fileCount: treeData.tree.length }
+      });
 
       // Auto-save to encrypted storage
       if (encryptionReady) {
         await saveEncrypted('repositories', newRepos);
       }
     } catch (err) {
+      await logClientEvent({
+        level: 'error',
+        event: 'repo_load_error',
+        message: err.message || 'Repository load failed',
+        meta: { repo: trimmedInput }
+      });
       setError(err.message);
     } finally {
       setLoading(false);
@@ -184,6 +213,12 @@ const FileBrowser = () => {
       const response = await fetch(`${API_BASE}/api/github/file/${owner}/${repo}/${branch}/${filePath}`);
       if (!response.ok) {
         const errorData = await response.json();
+        await logClientEvent({
+          level: 'warn',
+          event: 'file_load_failed',
+          message: errorData.error || 'Failed to fetch file',
+          meta: { repo: `${owner}/${repo}`, filePath, status: response.status }
+        });
         throw new Error(errorData.error || 'Failed to fetch file');
       }
       const data = await response.json();
@@ -191,7 +226,18 @@ const FileBrowser = () => {
         path: filePath,
         content: data.content
       });
+      await logClientEvent({
+        event: 'file_load_success',
+        message: 'File loaded',
+        meta: { repo: `${owner}/${repo}`, filePath }
+      });
     } catch (err) {
+      await logClientEvent({
+        level: 'error',
+        event: 'file_load_error',
+        message: err.message || 'File load failed',
+        meta: { repo: `${owner}/${repo}`, filePath }
+      });
       setError(err.message);
     } finally {
       setLoading(false);

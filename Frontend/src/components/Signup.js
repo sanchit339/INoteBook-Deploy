@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { getApiBase } from '../utils/apiBase';
+import { logClientEvent } from '../utils/clientLogger';
 
 const Signup = (props) => {
 
@@ -11,6 +12,12 @@ const Signup = (props) => {
 
   const handleSubmit = async (eve) => {
     eve.preventDefault();
+    const email = credentail.email.trim().toLowerCase();
+    await logClientEvent({
+      event: 'signup_submit',
+      message: 'User submitted signup form',
+      meta: { email }
+    });
     try {
       // API call without destructuring since variables were unused
       const response = await fetch(`${backendUrl}/api/auth/createUser`, {
@@ -20,21 +27,38 @@ const Signup = (props) => {
         },
         body: JSON.stringify({
           name: credentail.name.trim(),
-          email: credentail.email.trim().toLowerCase(),
+          email,
           password: credentail.password
         })
       });
       const json = await response.json();
       // save the auth token and redirect (if success) 
       if (response.ok && json.success) {
+        await logClientEvent({
+          event: 'signup_success',
+          message: 'User signup succeeded',
+          meta: { email, status: response.status }
+        });
         localStorage.setItem('token', json.authtoken);  // here we are saving the token in DB
         props.showAlert("Account Created SuccessFully", "success")
         // to redirect we use use history hook
         history("/");
       } else {
+        await logClientEvent({
+          level: 'warn',
+          event: 'signup_failed',
+          message: json.error || 'Signup failed',
+          meta: { email, status: response.status }
+        });
         props.showAlert(json.error || "Invalid Credential", "danger")
       }
     } catch (error) {
+      await logClientEvent({
+        level: 'error',
+        event: 'signup_network_error',
+        message: error.message || 'Network error',
+        meta: { email }
+      });
       props.showAlert("Unable to reach server. Please try again.", "danger")
     }
   }
