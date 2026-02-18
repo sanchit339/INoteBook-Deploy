@@ -21,8 +21,8 @@ const Signup = ({ showAlert }) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: credential.name,
-        email: credential.email,
+        name: credential.name.trim(),
+        email: credential.email.trim().toLowerCase(),
         password: credential.password,
       }),
     });

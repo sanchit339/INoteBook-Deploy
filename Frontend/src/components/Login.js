@@ -10,21 +10,28 @@ const Login = ({ showAlert }) => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const response = await fetch(`${backendUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email: credential.email, password: credential.password }),
-    });
+    try {
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: credential.email.trim().toLowerCase(),
+          password: credential.password,
+        }),
+      });
 
-    const json = await response.json();
-    if (json.success) {
-      localStorage.setItem('token', json.authtoken);
-      showAlert('Logged in successfully', 'success');
-      history('/');
-    } else {
-      showAlert(json.error || 'Invalid credentials', 'danger');
+      const json = await response.json();
+      if (response.ok && json.success) {
+        localStorage.setItem('token', json.authtoken);
+        showAlert('Logged in successfully', 'success');
+        history('/');
+      } else {
+        showAlert(json.error || 'Invalid credentials', 'danger');
+      }
+    } catch (error) {
+      showAlert('Unable to reach server. Please try again.', 'danger');
     }
   };
 

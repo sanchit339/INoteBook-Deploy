@@ -18,7 +18,7 @@ router.post('/createUser', [
     // if there are errors return bad request and the errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success, errors: errors.array() });
+      return res.status(400).json({ success, error: errors.array()[0].msg, errors: errors.array() });
     }
 
     try {
@@ -68,10 +68,11 @@ router.post('/login', [
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ success, error: errors.array()[0].msg, errors: errors.array() });
   }
   // at this stage the user has filled the usesr id and password 
-  const { email, password } = req.body; // taking email and password from the req body 
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
   try {
     let user = await User.findOne({ email }); // find one email form the user database
     if (!user) {
