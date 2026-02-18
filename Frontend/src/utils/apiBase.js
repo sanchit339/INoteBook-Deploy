@@ -23,5 +23,6 @@ export const getApiBase = () => {
     return 'http://localhost:4001';
   }
 
-  return PROD_BACKEND;
+  // In deployed frontend, prefer same-origin /api with Vercel rewrite to avoid browser CORS.
+  return '';
 };
