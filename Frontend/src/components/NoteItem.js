@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { FaRegPenToSquare, FaRegTrashCan } from 'react-icons/fa6';
+import { FaEdit, FaTrashAlt } from 'react-icons/fa';
 import noteContext from '../context/notes/noteContext';
 
 const NoteItem = ({ note, updateNote, showAlert }) => {
@@ -18,7 +18,7 @@ const NoteItem = ({ note, updateNote, showAlert }) => {
             }}
             aria-label="Edit note"
           >
-            <FaRegPenToSquare />
+            <FaEdit />
           </button>
           <button
             className="icon-btn danger"
@@ -28,7 +28,7 @@ const NoteItem = ({ note, updateNote, showAlert }) => {
             }}
             aria-label="Delete note"
           >
-            <FaRegTrashCan />
+            <FaTrashAlt />
           </button>
         </div>
       </div>
