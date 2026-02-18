@@ -8,32 +8,41 @@ connectToMongo();
 const app = express()
 const port = process.env.PORT || 4001
 
-const allowedOrigins = [
+const allowedOrigins = new Set([
   'https://i-note-book-deploy-frontend.vercel.app',
   'https://i-note-book-deploy.vercel.app',
   'http://localhost:3000'
-];
+]);
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow non-browser clients and same-origin requests with no Origin header
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('CORS not allowed for this origin'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'auth-token']
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+  // Allow Vercel preview deployments for this frontend project
+  if (/^https:\/\/i-note-book-deploy-frontend.*\.vercel\.app$/.test(origin)) return true;
+  return false;
 };
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    if (origin) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+    }
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, auth-token');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  return next();
+});
+
+app.use(cors({
+  origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
+  credentials: true
+}));
 
 app.use(express.json())
 
