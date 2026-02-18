@@ -1,41 +1,27 @@
-import React, { useContext } from 'react';
-import { FaEdit, FaTrashAlt } from 'react-icons/fa';
+import React , {useContext} from 'react'
 import noteContext from '../context/notes/noteContext';
 
-const NoteItem = ({ note, updateNote, showAlert }) => {
+
+const NoteItem = (props) => { // as we created the props in notes
   const context = useContext(noteContext);
-  const { deleteNote } = context;
+  const {deleteNote} = context;
+  const {note , updateNote} = props;
 
   return (
-    <article className="card note-card">
-      <div className="note-card__head">
-        <h4>{note.title}</h4>
-        <div className="note-card__actions">
-          <button
-            className="icon-btn"
-            onClick={() => {
-              updateNote(note);
-            }}
-            aria-label="Edit note"
-          >
-            <FaEdit />
-          </button>
-          <button
-            className="icon-btn danger"
-            onClick={() => {
-              deleteNote(note._id);
-              showAlert('Deleted successfully', 'success');
-            }}
-            aria-label="Delete note"
-          >
-            <FaTrashAlt />
-          </button>
+    // from the note we are de structuring the the values like the title etc
+    <div className='col-md-3'>
+      <div className='card my-3' >
+        <div className="card-body">
+            <div className='d-flex align-items-center'>
+            <h5 className="card-title">{note.title}</h5>
+            <i className="fa-solid fa-trash-can mx-2" onClick={()=>{deleteNote(note._id);props.showAlert("Deleted Successfully" , "success");}}></i>
+            <i className="fa-solid fa-pen-to-square mx-2" onClick={()=> {updateNote(note);}}></i>
         </div>
-      </div>
-      <p>{note.description}</p>
-      <span className="note-tag">#{note.tag || 'general'}</span>
-    </article>
-  );
-};
+        <p className="card-text">{note.description}</p>
+        </div>
+    </div>
+    </div>
+  )
+}
 
-export default NoteItem;
+export default NoteItem
