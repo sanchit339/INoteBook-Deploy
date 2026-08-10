@@ -87,7 +87,7 @@ app.get('/', (req, res) => {
 // avaliable routes
 app.use('/api/auth', require('./Routes/auth'))
 app.use('/api/notes', require('./Routes/notes'))
-app.use('/api/github', require('./Routes/github'))
+app.use('/api/resource', require('./Routes/resource'))
 app.use('/api/logs', require('./Routes/logs'))
 
 app.listen(port, () => {

@@ -51,9 +51,9 @@ const NavBar = () => {
               </li>
               <li className="nav-item">
                 <Link
-                  className={`nav-link ${location.pathname.startsWith("/code") ? "active" : ""
+                  className={`nav-link ${location.pathname.startsWith("/resource") ? "active" : ""
                     }`}
-                  to="/code"
+                  to="/resource"
                 >
                   Resources
                 </Link>
