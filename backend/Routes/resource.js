@@ -172,12 +172,12 @@ router.post('/invoke', async (req, res) => {
         return res.status(mapped.status).json(encryptResponse(aesKey, { error: mapped.error }));
       }
       if (error && error.message === 'Malformed envelope') {
-        return res.status(400).json({ error: 'Bad request' });
+        return res.status(401).json({ error: 'Session expired', code: 'REBOOT' });
       }
       return res.status(500).json(encryptResponse(aesKey, { error: 'Internal server error' }));
     }
-    // Could not open envelope — return generic opaque error (no details)
-    return res.status(400).json({ error: 'Bad request' });
+    // Could not open envelope — usually stale client key after serverless cold start
+    return res.status(401).json({ error: 'Session expired', code: 'REBOOT' });
   }
 });
 

@@ -5,6 +5,7 @@
  * - AES key sealed to server with RSA-OAEP for each request
  * - Request + response bodies are ciphertext blobs
  * - Single opaque endpoint: POST /api/resource/invoke
+ * - Auto re-handshake when serverless rotates keys after idle/cold start
  * - purgeSecureSession() wipes all secrets on tab close
  */
 
@@ -15,6 +16,10 @@ let serverPublicKey = null; // CryptoKey
 let sessionAesKey = null; // CryptoKey
 let sessionAesRaw = null; // ArrayBuffer (for re-export per request seal)
 let bootPromise = null;
+let bootedAt = 0;
+
+/** Re-fetch server public key periodically (Vercel instances can recycle). */
+const BOOT_MAX_AGE_MS = 4 * 60 * 1000;
 
 const b64ToBytes = (b64) => {
   const bin = atob(b64);
@@ -82,7 +87,7 @@ const aesDecryptJson = async (i, d) => {
 };
 
 const sealAesKey = async () => {
-  if (!serverPublicKey) throw new Error('Channel not ready');
+  if (!serverPublicKey) throw new Error('Connection unavailable');
   await ensureAesKey();
   const sealed = await window.crypto.subtle.encrypt(
     { name: 'RSA-OAEP' },
@@ -101,6 +106,7 @@ export const purgeSecureSession = () => {
   sessionAesKey = null;
   sessionAesRaw = null;
   bootPromise = null;
+  bootedAt = 0;
 };
 
 /**
@@ -134,14 +140,29 @@ export const scrubLegacyStorage = () => {
   }
 };
 
+const isBootFresh = () =>
+  Boolean(serverPublicKey && sessionAesKey && Date.now() - bootedAt < BOOT_MAX_AGE_MS);
+
 /**
- * Boot encrypted channel (fetch server public key, create ephemeral AES key).
+ * Boot channel (fetch server public key, create ephemeral AES key).
+ * @param {boolean} force - always re-handshake (after idle / server recycle)
  */
-export const bootSecureChannel = async () => {
+export const bootSecureChannel = async (force = false) => {
   if (typeof window === 'undefined' || !window.crypto?.subtle) {
     throw new Error('Connection unavailable');
   }
-  if (serverPublicKey && sessionAesKey) return true;
+
+  if (!force && isBootFresh()) return true;
+
+  if (force || !isBootFresh()) {
+    // Drop stale keys so we don't seal to an old public key after cold start
+    serverSpki = null;
+    serverPublicKey = null;
+    sessionAesKey = null;
+    sessionAesRaw = null;
+    bootPromise = null;
+    bootedAt = 0;
+  }
 
   if (!bootPromise) {
     bootPromise = (async () => {
@@ -158,6 +179,7 @@ export const bootSecureChannel = async () => {
       serverSpki = json.spki;
       serverPublicKey = await importServerPublicKey(serverSpki);
       await ensureAesKey();
+      bootedAt = Date.now();
       return true;
     })().catch((err) => {
       bootPromise = null;
@@ -168,18 +190,33 @@ export const bootSecureChannel = async () => {
   return bootPromise;
 };
 
-/**
- * Invoke an opaque encrypted resource operation.
- * @param {'project'|'tree'|'file'} op
- * @param {object} args
- */
-export const secureInvoke = async (op, args = {}) => {
-  await bootSecureChannel();
+const needsReboot = (res, raw, decryptFailed = false) => {
+  if (decryptFailed) return true;
+  if (!raw) return true;
+  if (raw.code === 'REBOOT') return true;
+  if (res && (res.status === 401 || res.status === 409)) return true;
+  // Envelope could not be opened after server key rotation
+  if (!raw.i || !raw.d) {
+    const msg = String(raw.error || '').toLowerCase();
+    if (
+      !raw.error ||
+      msg.includes('bad request') ||
+      msg.includes('session') ||
+      msg.includes('expired') ||
+      msg.includes('gone')
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
 
+const postInvokeOnce = async (op, args) => {
+  await bootSecureChannel();
   const envelopeInner = await aesEncryptJson({ op, ...args });
   const k = await sealAesKey();
-
   const apiBase = getApiBase();
+
   const res = await fetch(`${apiBase}/api/resource/invoke`, {
     method: 'POST',
     cache: 'no-store',
@@ -196,49 +233,72 @@ export const secureInvoke = async (op, args = {}) => {
   });
 
   const raw = await res.json().catch(() => null);
+  return { res, raw };
+};
+
+const unwrapResponse = async (res, raw) => {
   if (!raw || !raw.i || !raw.d) {
-    throw new Error(raw?.error || 'Request failed');
+    const err = new Error(raw?.error || 'Request failed');
+    err.reboot = needsReboot(res, raw);
+    throw err;
   }
 
   let payload;
   try {
     payload = await aesDecryptJson(raw.i, raw.d);
   } catch (_) {
-    // Server may have rotated RSA on cold start — re-boot once and retry
-    purgeSecureSession();
-    await bootSecureChannel();
-    const retryInner = await aesEncryptJson({ op, ...args });
-    const retryK = await sealAesKey();
-    const retryRes = await fetch(`${apiBase}/api/resource/invoke`, {
-      method: 'POST',
-      cache: 'no-store',
-      credentials: 'omit',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({
-        k: retryK,
-        i: retryInner.i,
-        d: retryInner.d,
-      }),
-    });
-    const retryRaw = await retryRes.json().catch(() => null);
-    if (!retryRaw?.i || !retryRaw?.d) {
-      throw new Error(retryRaw?.error || 'Request failed');
-    }
-    payload = await aesDecryptJson(retryRaw.i, retryRaw.d);
-    if (!retryRes.ok || payload?.error) {
-      throw new Error(payload?.error || 'Request failed');
-    }
-    return payload.data;
+    const err = new Error('Request failed');
+    err.reboot = true;
+    throw err;
+  }
+
+  if (payload?.code === 'REBOOT') {
+    const err = new Error(payload.error || 'Request failed');
+    err.reboot = true;
+    throw err;
   }
 
   if (!res.ok || payload?.error) {
-    throw new Error(payload?.error || 'Request failed');
+    const err = new Error(payload?.error || 'Request failed');
+    err.reboot = needsReboot(res, raw);
+    throw err;
   }
+
   return payload.data;
 };
 
-export const isSecureChannelReady = () =>
-  Boolean(serverPublicKey && sessionAesKey);
+/**
+ * Invoke an opaque encrypted resource operation.
+ * Automatically re-handshakes once if the server recycled after idle.
+ * @param {'project'|'tree'|'file'} op
+ * @param {object} args
+ */
+export const secureInvoke = async (op, args = {}) => {
+  try {
+    const { res, raw } = await postInvokeOnce(op, args);
+    return await unwrapResponse(res, raw);
+  } catch (firstErr) {
+    if (!firstErr?.reboot) {
+      throw firstErr;
+    }
+
+    // Serverless cold start / idle recycle: new RSA key — re-boot and retry once
+    await bootSecureChannel(true);
+    try {
+      const { res, raw } = await postInvokeOnce(op, args);
+      return await unwrapResponse(res, raw);
+    } catch (secondErr) {
+      // Don't surface "Bad request" — user-friendly after idle
+      const msg = String(secondErr?.message || '');
+      if (
+        !msg ||
+        /bad request|session|expired|reboot|connection/i.test(msg)
+      ) {
+        throw new Error('Connection lost. Please try again.');
+      }
+      throw secondErr;
+    }
+  }
+};
+
+export const isSecureChannelReady = () => isBootFresh();
