@@ -241,6 +241,45 @@ export const clearAllEncryptedData = () => {
 };
 
 /**
+ * Hard wipe of any workbench-related browser storage (local + session).
+ * Called when /resource unmounts or the tab closes — leave no residual blobs.
+ */
+export const purgeWorkbenchBrowserStorage = () => {
+    if (!isBrowser()) return;
+
+    try {
+        Object.keys(localStorage).forEach((key) => {
+            if (
+                key.startsWith(STORAGE_KEY_PREFIX) ||
+                key.includes('repositories') ||
+                key.includes('cloudnote') ||
+                key.includes('encryption')
+            ) {
+                localStorage.removeItem(key);
+            }
+        });
+    } catch (_) {
+        // ignore
+    }
+
+    try {
+        Object.keys(sessionStorage).forEach((key) => {
+            if (
+                key.startsWith(STORAGE_KEY_PREFIX) ||
+                key.includes('repositories') ||
+                key.includes('cloudnote') ||
+                key.includes('encryption') ||
+                key === ENCRYPTION_KEY_NAME
+            ) {
+                sessionStorage.removeItem(key);
+            }
+        });
+    } catch (_) {
+        // ignore
+    }
+};
+
+/**
  * Check if encryption is available and initialized
  * @returns {Promise<boolean>} True if encryption is ready
  */

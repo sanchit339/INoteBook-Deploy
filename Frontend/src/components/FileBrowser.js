@@ -5,12 +5,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import './FileBrowser.css';
 import {
-  initializeEncryption,
-  saveEncrypted,
-  loadEncrypted,
-  isEncryptionAvailable
+  purgeWorkbenchBrowserStorage,
 } from '../utils/cryptoUtils';
-import { getApiBase } from '../utils/apiBase';
+import {
+  bootSecureChannel,
+  secureInvoke,
+  purgeSecureSession,
+  scrubLegacyStorage,
+} from '../utils/secureResource';
 import { logClientEvent } from '../utils/clientLogger';
 
 const DEFAULT_DOC_TITLE = 'Eclipse IDE';
@@ -177,7 +179,7 @@ const FileBrowser = () => {
   const [statusMessage, setStatusMessage] = useState('Ready');
   const [error, setError] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState(new Set());
-  const [encryptionReady, setEncryptionReady] = useState(false);
+  const [channelReady, setChannelReady] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
   const [showOpenDialog, setShowOpenDialog] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -209,31 +211,63 @@ const FileBrowser = () => {
     ]);
   }, []);
 
-  const API_BASE = getApiBase();
+  /** Wipe RAM state + browser storage + crypto session (tab close / leave route). */
+  const wipeSession = useCallback(() => {
+    setProjects([]);
+    setActiveProjectIndex(null);
+    setProjectInput('');
+    setFileTree([]);
+    setSelectedFile(null);
+    setOpenEditors([]);
+    setActiveEditorPath(null);
+    setExpandedFolders(new Set());
+    setError(null);
+    setConsoleLines([]);
+    setStatusMessage('Session cleared');
+    purgeSecureSession();
+    scrubLegacyStorage();
+    purgeWorkbenchBrowserStorage();
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const initializeApp = async () => {
       try {
-        await initializeEncryption();
-        const isReady = await isEncryptionAvailable();
-        setEncryptionReady(isReady);
-
-        if (isReady) {
-          const saved = await loadEncrypted('repositories');
-          if (saved && Array.isArray(saved) && saved.length > 0) {
-            setProjects(saved);
-            setActiveProjectIndex(0);
-            setFileTree(saved[0].tree);
-            setStatusMessage(`Workspace restored · ${saved.length} project(s)`);
-          }
+        // Never keep prior workspace blobs — session is RAM-only
+        scrubLegacyStorage();
+        purgeWorkbenchBrowserStorage();
+        await bootSecureChannel();
+        if (!cancelled) {
+          setChannelReady(true);
+          setStatusMessage('Secure channel ready · session is memory-only');
+          pushConsole('Secure channel established (encrypted payloads, no disk cache).');
         }
       } catch (err) {
-        console.error('Failed to initialize:', err);
+        if (!cancelled) {
+          setChannelReady(false);
+          setError(err.message || 'Secure channel failed');
+          setStatusMessage('Secure channel failed');
+          pushConsole(err.message || 'Secure channel failed', 'error');
+        }
       }
     };
 
     initializeApp();
-  }, []);
+
+    const onPageHide = () => {
+      wipeSession();
+    };
+    // pagehide fires on tab close / navigate away (more reliable than unload)
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('beforeunload', onPageHide);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('beforeunload', onPageHide);
+      wipeSession();
+    };
+  }, [wipeSession, pushConsole]);
 
   // Chrome tab title + favicon while workbench is open
   useEffect(() => {
@@ -264,19 +298,6 @@ const FileBrowser = () => {
       activeProjectIndex !== null ? projects[activeProjectIndex] : null;
     document.title = buildWorkbenchTitle(activeEditor, activeProject);
   }, [openEditors, activeEditorPath, selectedFile, projects, activeProjectIndex]);
-
-  useEffect(() => {
-    const saveProjects = async () => {
-      if (encryptionReady && projects.length > 0) {
-        try {
-          await saveEncrypted('repositories', projects);
-        } catch (err) {
-          console.error('Failed to save workspace:', err);
-        }
-      }
-    };
-    saveProjects();
-  }, [projects, encryptionReady]);
 
   useEffect(() => {
     if (showOpenDialog && dialogInputRef.current) {
@@ -348,32 +369,26 @@ const FileBrowser = () => {
 
     setLoading(true);
     setError(null);
-    setStatusMessage(`Opening project ${trimmedInput}…`);
-    pushConsole(`Opening project ${trimmedInput}…`);
+    setStatusMessage('Opening project…');
+    pushConsole('Opening project over secure channel…');
     await logClientEvent({
       event: 'project_load_start',
       message: 'Project load requested',
-      meta: { project: trimmedInput },
+      meta: {},
     });
 
     try {
-      const projectResponse = await fetch(
-        `${API_BASE}/api/resource/project/${owner}/${name}`
-      );
-      if (!projectResponse.ok) {
-        const errorData = await projectResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to open project');
+      if (!channelReady) {
+        await bootSecureChannel();
+        setChannelReady(true);
       }
-      const projectData = await projectResponse.json();
 
-      const treeResponse = await fetch(
-        `${API_BASE}/api/resource/tree/${owner}/${name}/${projectData.defaultBranch}`
-      );
-      if (!treeResponse.ok) {
-        const errorData = await treeResponse.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to load project structure');
-      }
-      const treeData = await treeResponse.json();
+      const projectData = await secureInvoke('project', { owner, name });
+      const treeData = await secureInvoke('tree', {
+        owner,
+        name,
+        branch: projectData.defaultBranch,
+      });
 
       const newProject = {
         owner,
@@ -391,32 +406,31 @@ const FileBrowser = () => {
       setFileTree(treeData.tree);
       setProjectInput('');
       setSelectedFile(null);
+      setOpenEditors([]);
+      setActiveEditorPath(null);
       setExpandedFolders(new Set([trimmedInput]));
       setShowOpenDialog(false);
       setShowBottom(true);
       setBottomTab('console');
       setStatusMessage(
-        `Project ${trimmedInput} opened · ${treeData.tree.length} resources · ${treeData.branch}`
+        `Project opened · ${treeData.tree.length} resources · memory-only session`
       );
       pushConsole(
-        `Project ${trimmedInput} opened (${treeData.tree.length} resources, branch ${treeData.branch})`
+        `Project opened (${treeData.tree.length} resources). Data is not written to disk.`
       );
 
       await logClientEvent({
         event: 'project_load_success',
         message: 'Project loaded',
-        meta: { project: trimmedInput, fileCount: treeData.tree.length },
+        meta: { fileCount: treeData.tree.length },
       });
-
-      if (encryptionReady) {
-        await saveEncrypted('repositories', next);
-      }
+      // Intentionally NOT saved to localStorage / sessionStorage
     } catch (err) {
       await logClientEvent({
         level: 'error',
         event: 'project_load_error',
         message: err.message || 'Project load failed',
-        meta: { project: trimmedInput },
+        meta: {},
       });
       setError(err.message);
       setStatusMessage(err.message);
@@ -435,16 +449,15 @@ const FileBrowser = () => {
     setLoading(true);
     setStatusMessage(`Refreshing ${fullName}…`);
     try {
-      const projectResponse = await fetch(
-        `${API_BASE}/api/resource/project/${owner}/${projectName}`
-      );
-      if (!projectResponse.ok) throw new Error('Refresh failed');
-      const projectData = await projectResponse.json();
-      const treeResponse = await fetch(
-        `${API_BASE}/api/resource/tree/${owner}/${projectName}/${projectData.defaultBranch}`
-      );
-      if (!treeResponse.ok) throw new Error('Refresh failed');
-      const treeData = await treeResponse.json();
+      const projectData = await secureInvoke('project', {
+        owner,
+        name: projectName,
+      });
+      const treeData = await secureInvoke('tree', {
+        owner,
+        name: projectName,
+        branch: projectData.defaultBranch,
+      });
       const next = projects.map((p, i) =>
         i === activeProjectIndex
           ? { ...p, branch: treeData.branch, metadata: projectData, tree: treeData.tree }
@@ -453,9 +466,11 @@ const FileBrowser = () => {
       setProjects(next);
       setFileTree(treeData.tree);
       setStatusMessage(`Refreshed ${fullName}`);
+      pushConsole('Project refreshed over secure channel.');
     } catch (err) {
       setError(err.message);
       setStatusMessage(err.message);
+      pushConsole(err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -486,14 +501,7 @@ const FileBrowser = () => {
     }
 
     setStatusMessage(removed ? `Closed ${removed.fullName}` : 'Project closed');
-
-    if (encryptionReady) {
-      if (next.length > 0) {
-        await saveEncrypted('repositories', next);
-      } else {
-        localStorage.removeItem('cloudnote_encrypted_repositories');
-      }
-    }
+    // Memory-only: nothing to remove from disk
   };
 
   const loadFile = async (filePath) => {
@@ -514,14 +522,12 @@ const FileBrowser = () => {
     setStatusMessage(`Opening ${filePath}…`);
 
     try {
-      const response = await fetch(
-        `${API_BASE}/api/resource/file/${owner}/${projectName}/${branch}/${filePath}`
-      );
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to open resource');
-      }
-      const data = await response.json();
+      const data = await secureInvoke('file', {
+        owner,
+        name: projectName,
+        branch,
+        path: filePath,
+      });
       const fileObj = { path: filePath, content: data.content };
       setSelectedFile(fileObj);
       setActiveEditorPath(filePath);
@@ -531,18 +537,18 @@ const FileBrowser = () => {
       });
       setCursorPos({ line: 1, col: 1 });
       setStatusMessage(filePath);
-      pushConsole(`Opened ${filePath}`);
+      pushConsole(`Opened ${filePath} (encrypted channel, RAM only)`);
       await logClientEvent({
         event: 'file_load_success',
         message: 'Resource opened',
-        meta: { project: `${owner}/${projectName}`, filePath },
+        meta: {},
       });
     } catch (err) {
       await logClientEvent({
         level: 'error',
         event: 'file_load_error',
         message: err.message || 'Resource open failed',
-        meta: { project: `${owner}/${projectName}`, filePath },
+        meta: {},
       });
       setError(err.message);
       setStatusMessage(err.message);
@@ -1519,11 +1525,12 @@ const FileBrowser = () => {
           <span className="ecl-status-item">{statusMessage}</span>
         </div>
         <div className="ecl-status-right">
-          {encryptionReady && (
-            <span className="ecl-status-item" title="Local workspace cache is secured">
-              Secure Storage
-            </span>
-          )}
+          <span
+            className="ecl-status-item"
+            title="Payloads are AES-GCM encrypted; workspace lives only in RAM and is wiped on close"
+          >
+            {channelReady ? 'Secure Channel · Memory Only' : 'Channel…'}
+          </span>
           {activeProject && (
             <span className="ecl-status-item">
               {fileCount} files · {activeProject.branch}
