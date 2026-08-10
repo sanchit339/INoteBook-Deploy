@@ -13,6 +13,92 @@ import {
 import { getApiBase } from '../utils/apiBase';
 import { logClientEvent } from '../utils/clientLogger';
 
+const DEFAULT_DOC_TITLE = 'Eclipse IDE';
+const DEFAULT_APP_TITLE = 'Notable - Productivity Suite';
+
+/** Map filename → icon kind for Package Explorer / editor tabs */
+const getFileIconKind = (filePath = '') => {
+  const base = filePath.split('/').pop() || filePath;
+  const lower = base.toLowerCase();
+
+  if (lower === 'dockerfile' || lower.startsWith('dockerfile.')) return 'docker';
+  if (lower === 'makefile' || lower === 'gnumakefile') return 'make';
+  if (lower === 'readme' || lower.startsWith('readme.')) return 'md';
+  if (lower === 'license' || lower.startsWith('license.')) return 'license';
+  if (lower === 'package.json' || lower === 'package-lock.json') return 'npm';
+  if (lower === 'tsconfig.json' || lower === 'jsconfig.json') return 'tsconfig';
+  if (lower === '.gitignore' || lower === '.gitattributes' || lower === '.gitmodules') return 'git';
+  if (lower === 'pom.xml' || lower === 'build.gradle' || lower === 'build.gradle.kts') return 'build';
+  if (lower.endsWith('.env') || lower.startsWith('.env.')) return 'env';
+
+  const ext = lower.includes('.') ? lower.split('.').pop() : '';
+  const map = {
+    js: 'js', mjs: 'js', cjs: 'js',
+    jsx: 'jsx',
+    ts: 'ts',
+    tsx: 'tsx',
+    py: 'py', pyw: 'py',
+    java: 'java',
+    class: 'java',
+    kt: 'kt', kts: 'kt',
+    go: 'go',
+    rs: 'rs',
+    rb: 'rb',
+    php: 'php',
+    cs: 'cs',
+    cpp: 'cpp', cc: 'cpp', cxx: 'cpp', h: 'h', hpp: 'hpp', c: 'c',
+    swift: 'swift',
+    json: 'json',
+    xml: 'xml', xsl: 'xml',
+    html: 'html', htm: 'html',
+    css: 'css', scss: 'scss', sass: 'scss', less: 'css',
+    md: 'md', mdx: 'md', markdown: 'md',
+    yml: 'yml', yaml: 'yml',
+    sh: 'sh', bash: 'sh', zsh: 'sh', bat: 'sh', cmd: 'sh', ps1: 'sh',
+    sql: 'sql',
+    svg: 'svg', png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image', ico: 'image', bmp: 'image',
+    pdf: 'pdf',
+    txt: 'txt', log: 'txt',
+    properties: 'props', conf: 'props', cfg: 'props', ini: 'props',
+    gradle: 'build',
+    toml: 'toml',
+    lock: 'lock',
+    vue: 'vue',
+    svelte: 'svelte',
+  };
+  return map[ext] || 'file';
+};
+
+const buildWorkbenchTitle = (activeEditor, activeProject) => {
+  if (activeEditor?.path) {
+    const name = activeEditor.path.split('/').pop();
+    const project = activeProject?.fullName || 'Workspace';
+    return `${name} - ${project} - Eclipse IDE`;
+  }
+  if (activeProject?.fullName) {
+    return `${activeProject.fullName} - Eclipse IDE`;
+  }
+  return DEFAULT_DOC_TITLE;
+};
+
+const setFavicon = (href) => {
+  if (typeof document === 'undefined') return;
+  const selectors = [
+    "link[rel='icon']",
+    "link[rel='shortcut icon']",
+  ];
+  let link = document.querySelector(selectors[0]) || document.querySelector(selectors[1]);
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    document.head.appendChild(link);
+  }
+  // bust cache so chrome picks up the new icon
+  const url = href.includes('?') ? href : `${href}?v=eclipse1`;
+  link.type = href.endsWith('.svg') ? 'image/svg+xml' : 'image/x-icon';
+  link.href = url;
+};
+
 const MENU_ITEMS = [
   {
     label: 'File',
@@ -61,7 +147,14 @@ const MENU_ITEMS = [
     label: 'Window',
     items: [
       { id: 'show-explorer', label: 'Show View → Package Explorer' },
+      { id: 'show-outline', label: 'Show View → Outline' },
+      { id: 'show-bottom', label: 'Show View → Console' },
+      { id: 'divider' },
       { id: 'toggle-explorer', label: 'Toggle Package Explorer' },
+      { id: 'toggle-outline', label: 'Toggle Outline' },
+      { id: 'toggle-bottom', label: 'Toggle Console' },
+      { id: 'divider' },
+      { id: 'reset-perspective', label: 'Reset Perspective' },
     ],
   },
   {
@@ -89,10 +182,32 @@ const FileBrowser = () => {
   const [showOpenDialog, setShowOpenDialog] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showExplorer, setShowExplorer] = useState(true);
-  const [explorerWidth, setExplorerWidth] = useState(280);
+  const [explorerWidth, setExplorerWidth] = useState(260);
+  const [showOutline, setShowOutline] = useState(true);
+  const [outlineWidth, setOutlineWidth] = useState(220);
+  const [showBottom, setShowBottom] = useState(true);
+  const [bottomHeight, setBottomHeight] = useState(168);
+  const [bottomTab, setBottomTab] = useState('console'); // problems | console | progress | search
+  const [maximized, setMaximized] = useState(null); // null | explorer | editor | outline | bottom
+  const [welcomeSections, setWelcomeSections] = useState({
+    start: true,
+    samples: true,
+    help: false,
+  });
+  const [consoleLines, setConsoleLines] = useState([
+    { t: 'info', m: 'Eclipse IDE Resource Workbench started.' },
+    { t: 'info', m: 'Workspace ready.' },
+  ]);
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const dialogInputRef = useRef(null);
   const menuBarRef = useRef(null);
+
+  const pushConsole = useCallback((message, t = 'info') => {
+    setConsoleLines((prev) => [
+      ...prev.slice(-200),
+      { t, m: message, at: new Date().toLocaleTimeString() },
+    ]);
+  }, []);
 
   const API_BASE = getApiBase();
 
@@ -119,6 +234,36 @@ const FileBrowser = () => {
 
     initializeApp();
   }, []);
+
+  // Chrome tab title + favicon while workbench is open
+  useEffect(() => {
+    const previousTitle = document.title;
+    const previousIcon =
+      document.querySelector("link[rel='icon']")?.getAttribute('href') ||
+      document.querySelector("link[rel='shortcut icon']")?.getAttribute('href') ||
+      '/favicon.ico';
+
+    setFavicon(`${process.env.PUBLIC_URL || ''}/favicon.svg`);
+    document.title = buildWorkbenchTitle(
+      openEditors.find((ed) => ed.path === activeEditorPath) || selectedFile,
+      activeProjectIndex !== null ? projects[activeProjectIndex] : null
+    );
+
+    return () => {
+      document.title = previousTitle || DEFAULT_APP_TITLE;
+      setFavicon(previousIcon.split('?')[0] || '/favicon.ico');
+    };
+    // only mount/unmount for favicon restore; title updates in next effect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const activeEditor =
+      openEditors.find((ed) => ed.path === activeEditorPath) || selectedFile;
+    const activeProject =
+      activeProjectIndex !== null ? projects[activeProjectIndex] : null;
+    document.title = buildWorkbenchTitle(activeEditor, activeProject);
+  }, [openEditors, activeEditorPath, selectedFile, projects, activeProjectIndex]);
 
   useEffect(() => {
     const saveProjects = async () => {
@@ -204,6 +349,7 @@ const FileBrowser = () => {
     setLoading(true);
     setError(null);
     setStatusMessage(`Opening project ${trimmedInput}…`);
+    pushConsole(`Opening project ${trimmedInput}…`);
     await logClientEvent({
       event: 'project_load_start',
       message: 'Project load requested',
@@ -247,8 +393,13 @@ const FileBrowser = () => {
       setSelectedFile(null);
       setExpandedFolders(new Set([trimmedInput]));
       setShowOpenDialog(false);
+      setShowBottom(true);
+      setBottomTab('console');
       setStatusMessage(
         `Project ${trimmedInput} opened · ${treeData.tree.length} resources · ${treeData.branch}`
+      );
+      pushConsole(
+        `Project ${trimmedInput} opened (${treeData.tree.length} resources, branch ${treeData.branch})`
       );
 
       await logClientEvent({
@@ -269,6 +420,9 @@ const FileBrowser = () => {
       });
       setError(err.message);
       setStatusMessage(err.message);
+      pushConsole(err.message, 'error');
+      setShowBottom(true);
+      setBottomTab('problems');
     } finally {
       setLoading(false);
     }
@@ -377,6 +531,7 @@ const FileBrowser = () => {
       });
       setCursorPos({ line: 1, col: 1 });
       setStatusMessage(filePath);
+      pushConsole(`Opened ${filePath}`);
       await logClientEvent({
         event: 'file_load_success',
         message: 'Resource opened',
@@ -391,6 +546,9 @@ const FileBrowser = () => {
       });
       setError(err.message);
       setStatusMessage(err.message);
+      pushConsole(err.message, 'error');
+      setShowBottom(true);
+      setBottomTab('problems');
     } finally {
       setLoading(false);
     }
@@ -448,6 +606,7 @@ const FileBrowser = () => {
 
         if (item.type === 'file') {
           const isActive = selectedFile?.path === item.path;
+          const iconKind = getFileIconKind(item.path);
           return (
             <div
               key={fullPath}
@@ -456,7 +615,10 @@ const FileBrowser = () => {
               onClick={() => loadFile(item.path)}
               title={item.path}
             >
-              <span className="ecl-tree-icon ecl-file-icon" />
+              <span
+                className={`ecl-tree-icon ecl-ft ecl-ft-${iconKind}`}
+                aria-hidden="true"
+              />
               <span className="ecl-tree-name">{name}</span>
             </div>
           );
@@ -549,9 +711,36 @@ const FileBrowser = () => {
         break;
       case 'show-explorer':
         setShowExplorer(true);
+        setMaximized(null);
+        break;
+      case 'show-outline':
+        setShowOutline(true);
+        setMaximized(null);
+        break;
+      case 'show-bottom':
+        setShowBottom(true);
+        setMaximized(null);
+        setBottomTab('console');
         break;
       case 'toggle-explorer':
         setShowExplorer((v) => !v);
+        break;
+      case 'toggle-outline':
+        setShowOutline((v) => !v);
+        break;
+      case 'toggle-bottom':
+        setShowBottom((v) => !v);
+        break;
+      case 'reset-perspective':
+        setShowExplorer(true);
+        setShowOutline(true);
+        setShowBottom(true);
+        setMaximized(null);
+        setExplorerWidth(260);
+        setOutlineWidth(220);
+        setBottomHeight(168);
+        setBottomTab('console');
+        setStatusMessage('Perspective reset');
         break;
       case 'search-file':
         setShowOpenDialog(true);
@@ -561,13 +750,21 @@ const FileBrowser = () => {
     }
   };
 
-  const startResize = useCallback((e) => {
+  const startResize = useCallback((e, which) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startW = explorerWidth;
+    const startY = e.clientY;
+    const startExplorer = explorerWidth;
+    const startOutline = outlineWidth;
+    const startBottom = bottomHeight;
     const onMove = (ev) => {
-      const next = Math.min(480, Math.max(160, startW + (ev.clientX - startX)));
-      setExplorerWidth(next);
+      if (which === 'explorer') {
+        setExplorerWidth(Math.min(480, Math.max(160, startExplorer + (ev.clientX - startX))));
+      } else if (which === 'outline') {
+        setOutlineWidth(Math.min(420, Math.max(140, startOutline - (ev.clientX - startX))));
+      } else if (which === 'bottom') {
+        setBottomHeight(Math.min(420, Math.max(100, startBottom - (ev.clientY - startY))));
+      }
     };
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
@@ -575,28 +772,89 @@ const FileBrowser = () => {
     };
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
-  }, [explorerWidth]);
+  }, [explorerWidth, outlineWidth, bottomHeight]);
+
+  const buildOutlineSymbols = (file) => {
+    if (!file?.content) return [];
+    const lines = file.content.split('\n');
+    const symbols = [];
+    const patterns = [
+      { re: /^\s*(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z0-9_$]+)/, kind: 'member' },
+      { re: /^\s*(?:public|private|protected|static|final|\s)*\s*(?:class|interface|enum)\s+([A-Za-z0-9_]+)/, kind: 'type' },
+      { re: /^\s*(?:def|class|async def)\s+([A-Za-z0-9_]+)/, kind: 'member' },
+      { re: /^\s*#+\s+(.+)$/, kind: 'heading' },
+      { re: /^\s*(?:func|type|package)\s+([A-Za-z0-9_]+)/, kind: 'member' },
+    ];
+    lines.forEach((line, idx) => {
+      for (const p of patterns) {
+        const m = line.match(p.re);
+        if (m) {
+          symbols.push({ name: m[1], kind: p.kind, line: idx + 1 });
+          break;
+        }
+      }
+    });
+    return symbols.slice(0, 200);
+  };
+
+  const toggleMaximize = (panel) => {
+    setMaximized((cur) => (cur === panel ? null : panel));
+  };
 
   const activeProject =
     activeProjectIndex !== null ? projects[activeProjectIndex] : null;
   const treeStructure = fileTree.length > 0 ? buildTreeStructure() : {};
   const activeEditor =
     openEditors.find((ed) => ed.path === activeEditorPath) || selectedFile;
-
+  const outlineSymbols = buildOutlineSymbols(activeEditor);
+  const problemLines = consoleLines.filter((l) => l.t === 'error' || l.t === 'warn');
   const fileCount = fileTree.filter((t) => t.type === 'file').length;
+
+  const isMax = (panel) => maximized === panel;
+  const hideForMax = (panel) => maximized && maximized !== panel;
+
+  const ViewChrome = ({ title, panel, onHide, children, tabs }) => (
+    <div className={`ecl-view-chrome ${isMax(panel) ? 'maximized' : ''}`}>
+      <div className="ecl-view-titlebar">
+        <div className="ecl-view-title-tabs">
+          {tabs || <span className="ecl-view-title-label">{title}</span>}
+        </div>
+        <div className="ecl-view-actions">
+          <button
+            type="button"
+            className="ecl-view-act"
+            title={isMax(panel) ? 'Restore' : 'Maximize'}
+            onClick={() => toggleMaximize(panel)}
+          >
+            {isMax(panel) ? '❐' : '□'}
+          </button>
+          <button
+            type="button"
+            className="ecl-view-act"
+            title="Minimize"
+            onClick={onHide}
+          >
+            –
+          </button>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
 
   return (
     <div className="eclipse-workbench">
       {/* Title bar strip */}
       <div className="ecl-titlebar">
+        <img
+          className="ecl-title-logo"
+          src={`${process.env.PUBLIC_URL || ''}/eclipse-icon.png`}
+          alt=""
+          width={16}
+          height={16}
+        />
         <span className="ecl-title-text">
-          {activeEditor
-            ? `${activeEditor.path.split('/').pop()} - ${
-                activeProject?.fullName || 'Workspace'
-              } - Eclipse IDE`
-            : activeProject
-            ? `${activeProject.fullName} - Eclipse IDE`
-            : 'Eclipse IDE'}
+          {buildWorkbenchTitle(activeEditor, activeProject)}
         </span>
       </div>
 
@@ -662,11 +920,27 @@ const FileBrowser = () => {
         <div className="ecl-tool-sep" />
         <button
           type="button"
-          className="ecl-tool-btn"
+          className={`ecl-tool-btn ${showExplorer ? 'active' : ''}`}
           title="Toggle Package Explorer"
-          onClick={() => setShowExplorer((v) => !v)}
+          onClick={() => { setShowExplorer((v) => !v); setMaximized(null); }}
         >
           <span className="ecl-tb-icon ecl-tb-explorer" />
+        </button>
+        <button
+          type="button"
+          className={`ecl-tool-btn ${showOutline ? 'active' : ''}`}
+          title="Toggle Outline"
+          onClick={() => { setShowOutline((v) => !v); setMaximized(null); }}
+        >
+          <span className="ecl-tb-icon ecl-tb-outline" />
+        </button>
+        <button
+          type="button"
+          className={`ecl-tool-btn ${showBottom ? 'active' : ''}`}
+          title="Toggle Console"
+          onClick={() => { setShowBottom((v) => !v); setMaximized(null); }}
+        >
+          <span className="ecl-tb-icon ecl-tb-console" />
         </button>
         <div className="ecl-tool-sep" />
         <div className="ecl-toolbar-path">
@@ -710,203 +984,533 @@ const FileBrowser = () => {
         ))}
       </div>
 
-      {/* Main body */}
-      <div className="ecl-body">
-        {showExplorer && (
+      {/* Main body — Eclipse workbench: left | center+bottom | right */}
+      <div className={`ecl-body ${maximized ? `max-${maximized}` : ''}`}>
+        {/* Left fast-view strip when explorer hidden */}
+        {!showExplorer && !hideForMax('explorer') && (
+          <button
+            type="button"
+            className="ecl-fastview ecl-fastview-left"
+            title="Show Package Explorer"
+            onClick={() => setShowExplorer(true)}
+          >
+            Package Explorer
+          </button>
+        )}
+
+        {/* Package Explorer */}
+        {showExplorer && !hideForMax('explorer') && (
           <>
-            <div className="ecl-view ecl-package-explorer" style={{ width: explorerWidth }}>
-              <div className="ecl-view-tabbar">
-                <div className="ecl-view-tab active">Package Explorer</div>
-                <div className="ecl-view-tab">Outline</div>
-              </div>
-              <div className="ecl-view-toolbar">
-                <button
-                  type="button"
-                  className="ecl-mini-btn"
-                  title="Collapse All"
-                  onClick={() => setExpandedFolders(new Set(activeProject ? [activeProject.fullName] : []))}
-                >
-                  ⊟
-                </button>
-                <button
-                  type="button"
-                  className="ecl-mini-btn"
-                  title="Open Project"
-                  onClick={() => setShowOpenDialog(true)}
-                >
-                  +
-                </button>
-              </div>
-              <div className="ecl-view-content">
-                {activeProject ? (
-                  <>
-                    <div
-                      className="ecl-tree-item ecl-project-root"
-                      style={{ paddingLeft: 8 }}
-                      onClick={() => toggleFolder(activeProject.fullName)}
-                    >
-                      <span
-                        className={`ecl-tree-twistie ${
-                          expandedFolders.has(activeProject.fullName) ? 'open' : ''
-                        }`}
-                      />
-                      <span className="ecl-tree-icon ecl-project-icon" />
-                      <span className="ecl-tree-name">{activeProject.fullName}</span>
+            <div
+              className={`ecl-view ecl-package-explorer ${isMax('explorer') ? 'is-max' : ''}`}
+              style={isMax('explorer') ? undefined : { width: explorerWidth }}
+            >
+              <ViewChrome
+                title="Package Explorer"
+                panel="explorer"
+                onHide={() => { setShowExplorer(false); setMaximized(null); }}
+              >
+                <div className="ecl-view-toolbar">
+                  <button
+                    type="button"
+                    className="ecl-mini-btn"
+                    title="Collapse All"
+                    onClick={() => setExpandedFolders(new Set(activeProject ? [activeProject.fullName] : []))}
+                  >
+                    ⊟
+                  </button>
+                  <button
+                    type="button"
+                    className="ecl-mini-btn"
+                    title="Open Project"
+                    onClick={() => setShowOpenDialog(true)}
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="ecl-view-content">
+                  {activeProject ? (
+                    <>
+                      <div
+                        className="ecl-tree-item ecl-project-root"
+                        style={{ paddingLeft: 8 }}
+                        onClick={() => toggleFolder(activeProject.fullName)}
+                      >
+                        <span
+                          className={`ecl-tree-twistie ${
+                            expandedFolders.has(activeProject.fullName) ? 'open' : ''
+                          }`}
+                        />
+                        <span className="ecl-tree-icon ecl-project-icon" />
+                        <span className="ecl-tree-name">{activeProject.fullName}</span>
+                      </div>
+                      {expandedFolders.has(activeProject.fullName) &&
+                        renderTree(treeStructure, '', 1)}
+                    </>
+                  ) : (
+                    <div className="ecl-empty-view">
+                      <p>No projects in workspace.</p>
+                      <button type="button" className="ecl-link-btn" onClick={() => setShowOpenDialog(true)}>
+                        Open Project…
+                      </button>
                     </div>
-                    {expandedFolders.has(activeProject.fullName) &&
-                      renderTree(treeStructure, '', 1)}
-                  </>
-                ) : (
-                  <div className="ecl-empty-view">
-                    <p>No projects in workspace.</p>
-                    <button type="button" className="ecl-link-btn" onClick={() => setShowOpenDialog(true)}>
-                      Open Project…
-                    </button>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </ViewChrome>
             </div>
-            <div className="ecl-sash" onMouseDown={startResize} title="Resize" />
+            {!isMax('explorer') && (
+              <div
+                className="ecl-sash ecl-sash-v"
+                onMouseDown={(e) => startResize(e, 'explorer')}
+                title="Resize"
+              />
+            )}
           </>
         )}
 
-        <div className="ecl-editor-area">
-          <div className="ecl-editor-tabs">
-            {openEditors.length === 0 ? (
-              <div className="ecl-editor-tab placeholder">Welcome</div>
-            ) : (
-              openEditors.map((ed) => (
-                <div
-                  key={ed.path}
-                  className={`ecl-editor-tab ${activeEditorPath === ed.path ? 'active' : ''}`}
-                  onClick={() => {
-                    setActiveEditorPath(ed.path);
-                    setSelectedFile(ed);
-                    setStatusMessage(ed.path);
-                  }}
-                  title={ed.path}
-                >
-                  <span className="ecl-tab-file-icon" />
-                  <span className="ecl-tab-label">{ed.path.split('/').pop()}</span>
-                  <button
-                    type="button"
-                    className="ecl-tab-close"
-                    onClick={(e) => closeEditor(ed.path, e)}
-                  >
-                    ×
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="ecl-editor-body">
-            {error && (
-              <div className="ecl-error-banner">
-                <span>{error}</span>
-                <button type="button" onClick={() => setError(null)}>
-                  ×
-                </button>
-              </div>
-            )}
-
-            {activeEditor ? (
-              <>
-                <div className="ecl-breadcrumb">
-                  <span className="ecl-bc-item">{activeProject?.fullName}</span>
-                  {activeEditor.path.split('/').map((part, i, arr) => (
-                    <React.Fragment key={i}>
-                      <span className="ecl-bc-sep">›</span>
-                      <span className={i === arr.length - 1 ? 'ecl-bc-item current' : 'ecl-bc-item'}>
-                        {part}
-                      </span>
-                    </React.Fragment>
-                  ))}
-                </div>
-                <div className="ecl-code-scroll">
-                  {activeEditor.path.toLowerCase().endsWith('.md') ? (
-                    <div className="ecl-markdown">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          code({ node, inline, className, children, ...props }) {
-                            const match = /language-(\w+)/.exec(className || '');
-                            return !inline && match ? (
-                              <SyntaxHighlighter
-                                style={oneLight}
-                                language={match[1]}
-                                PreTag="div"
-                                {...props}
-                              >
-                                {String(children).replace(/\n$/, '')}
-                              </SyntaxHighlighter>
-                            ) : (
-                              <code className={className} {...props}>
-                                {children}
-                              </code>
-                            );
-                          },
-                        }}
-                      >
-                        {activeEditor.content}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <SyntaxHighlighter
-                      language={getLanguage(activeEditor.path)}
-                      style={oneLight}
-                      showLineNumbers
-                      wrapLines
-                      customStyle={{
-                        margin: 0,
-                        padding: '8px 0',
-                        background: '#ffffff',
-                        fontSize: '12.5px',
-                        lineHeight: '1.45',
-                        minHeight: '100%',
-                      }}
-                      lineNumberStyle={{
-                        minWidth: '3em',
-                        paddingRight: '12px',
-                        color: '#8a8a8a',
-                        background: '#f5f5f5',
-                        borderRight: '1px solid #e0e0e0',
-                        marginRight: '12px',
-                      }}
+        {/* Center column: editor + bottom views */}
+        {(!maximized || maximized === 'editor' || maximized === 'bottom') && (
+          <div className={`ecl-center-col ${isMax('editor') || isMax('bottom') ? 'is-max' : ''}`}>
+            {!hideForMax('editor') && (
+              <div className={`ecl-editor-area ${isMax('editor') ? 'is-max' : ''}`}>
+                <div className="ecl-view-titlebar ecl-editor-titlebar">
+                  <div className="ecl-editor-tabs">
+                    {openEditors.length === 0 ? (
+                      <div className="ecl-editor-tab placeholder active">Welcome</div>
+                    ) : (
+                      openEditors.map((ed) => {
+                        const iconKind = getFileIconKind(ed.path);
+                        return (
+                          <div
+                            key={ed.path}
+                            className={`ecl-editor-tab ${activeEditorPath === ed.path ? 'active' : ''}`}
+                            onClick={() => {
+                              setActiveEditorPath(ed.path);
+                              setSelectedFile(ed);
+                              setStatusMessage(ed.path);
+                            }}
+                            title={ed.path}
+                          >
+                            <span
+                              className={`ecl-tab-file-icon ecl-ft ecl-ft-${iconKind}`}
+                              aria-hidden="true"
+                            />
+                            <span className="ecl-tab-label">{ed.path.split('/').pop()}</span>
+                            <button
+                              type="button"
+                              className="ecl-tab-close"
+                              onClick={(e) => closeEditor(ed.path, e)}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  <div className="ecl-view-actions">
+                    <button
+                      type="button"
+                      className="ecl-view-act"
+                      title={isMax('editor') ? 'Restore' : 'Maximize'}
+                      onClick={() => toggleMaximize('editor')}
                     >
-                      {activeEditor.content}
-                    </SyntaxHighlighter>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="ecl-welcome">
-                <div className="ecl-welcome-card">
-                  <div className="ecl-welcome-logo">e</div>
-                  <h1>Eclipse IDE</h1>
-                  <p className="ecl-welcome-sub">Resource Workbench</p>
-                  <div className="ecl-welcome-actions">
-                    <button type="button" className="ecl-welcome-btn primary" onClick={() => setShowOpenDialog(true)}>
-                      Open Project…
-                    </button>
-                    <button type="button" className="ecl-welcome-btn" onClick={() => (window.location.href = '/')}>
-                      Exit Workbench
+                      {isMax('editor') ? '❐' : '□'}
                     </button>
                   </div>
-                  <ul className="ecl-welcome-tips">
-                    <li>
-                      <kbd>Ctrl</kbd>+<kbd>O</kbd> Open Project
-                    </li>
-                    <li>
-                      <kbd>F5</kbd> Refresh
-                    </li>
-                    <li>Path format: <code>team/project</code></li>
-                  </ul>
+                </div>
+
+                <div className="ecl-editor-body">
+                  {error && (
+                    <div className="ecl-error-banner">
+                      <span>{error}</span>
+                      <button type="button" onClick={() => setError(null)}>
+                        ×
+                      </button>
+                    </div>
+                  )}
+
+                  {activeEditor ? (
+                    <>
+                      <div className="ecl-breadcrumb">
+                        <span className="ecl-bc-item">{activeProject?.fullName}</span>
+                        {activeEditor.path.split('/').map((part, i, arr) => (
+                          <React.Fragment key={i}>
+                            <span className="ecl-bc-sep">›</span>
+                            <span className={i === arr.length - 1 ? 'ecl-bc-item current' : 'ecl-bc-item'}>
+                              {part}
+                            </span>
+                          </React.Fragment>
+                        ))}
+                      </div>
+                      <div className="ecl-code-scroll">
+                        {activeEditor.path.toLowerCase().endsWith('.md') ? (
+                          <div className="ecl-markdown">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                code({ node, inline, className, children, ...props }) {
+                                  const match = /language-(\w+)/.exec(className || '');
+                                  return !inline && match ? (
+                                    <SyntaxHighlighter
+                                      style={oneLight}
+                                      language={match[1]}
+                                      PreTag="div"
+                                      {...props}
+                                    >
+                                      {String(children).replace(/\n$/, '')}
+                                    </SyntaxHighlighter>
+                                  ) : (
+                                    <code className={className} {...props}>
+                                      {children}
+                                    </code>
+                                  );
+                                },
+                              }}
+                            >
+                              {activeEditor.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          <SyntaxHighlighter
+                            language={getLanguage(activeEditor.path)}
+                            style={oneLight}
+                            showLineNumbers
+                            wrapLines
+                            customStyle={{
+                              margin: 0,
+                              padding: '8px 0',
+                              background: '#ffffff',
+                              fontSize: '12.5px',
+                              lineHeight: '1.45',
+                              minHeight: '100%',
+                            }}
+                            lineNumberStyle={{
+                              minWidth: '3em',
+                              paddingRight: '12px',
+                              color: '#8a8a8a',
+                              background: '#f5f5f5',
+                              borderRight: '1px solid #e0e0e0',
+                              marginRight: '12px',
+                            }}
+                          >
+                            {activeEditor.content}
+                          </SyntaxHighlighter>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="ecl-welcome ecl-welcome-full">
+                      <div className="ecl-welcome-layout">
+                        <div className="ecl-welcome-header">
+                          <img
+                            className="ecl-welcome-logo-img"
+                            src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
+                            alt="Eclipse IDE"
+                            width={48}
+                            height={48}
+                          />
+                          <div>
+                            <h1>Eclipse IDE</h1>
+                            <p className="ecl-welcome-sub">Resource Workbench — Overview</p>
+                          </div>
+                        </div>
+
+                        <div className="ecl-welcome-grid">
+                          <div className="ecl-welcome-panel">
+                            <button
+                              type="button"
+                              className="ecl-welcome-section-head"
+                              onClick={() =>
+                                setWelcomeSections((s) => ({ ...s, start: !s.start }))
+                              }
+                            >
+                              <span className={`ecl-tree-twistie ${welcomeSections.start ? 'open' : ''}`} />
+                              Start
+                            </button>
+                            {welcomeSections.start && (
+                              <div className="ecl-welcome-section-body">
+                                <button type="button" className="ecl-welcome-link" onClick={() => setShowOpenDialog(true)}>
+                                  Open Project…
+                                </button>
+                                <button type="button" className="ecl-welcome-link" onClick={() => setShowExplorer(true)}>
+                                  Show Package Explorer
+                                </button>
+                                <button type="button" className="ecl-welcome-link" onClick={() => setShowOutline(true)}>
+                                  Show Outline
+                                </button>
+                                <button type="button" className="ecl-welcome-link" onClick={() => { setShowBottom(true); setBottomTab('console'); }}>
+                                  Show Console
+                                </button>
+                                <button type="button" className="ecl-welcome-link" onClick={() => (window.location.href = '/')}>
+                                  Exit Workbench
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="ecl-welcome-panel">
+                            <button
+                              type="button"
+                              className="ecl-welcome-section-head"
+                              onClick={() =>
+                                setWelcomeSections((s) => ({ ...s, samples: !s.samples }))
+                              }
+                            >
+                              <span className={`ecl-tree-twistie ${welcomeSections.samples ? 'open' : ''}`} />
+                              Workspace
+                            </button>
+                            {welcomeSections.samples && (
+                              <div className="ecl-welcome-section-body">
+                                {projects.length === 0 ? (
+                                  <p className="ecl-muted-note">No projects open. Use Open Project… (Ctrl+O).</p>
+                                ) : (
+                                  projects.map((p, i) => (
+                                    <button
+                                      key={p.fullName}
+                                      type="button"
+                                      className="ecl-welcome-link"
+                                      onClick={() => switchProject(i)}
+                                    >
+                                      {p.fullName}
+                                    </button>
+                                  ))
+                                )}
+                                <p className="ecl-muted-note">Path format: <code>team/project</code></p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="ecl-welcome-panel">
+                            <button
+                              type="button"
+                              className="ecl-welcome-section-head"
+                              onClick={() =>
+                                setWelcomeSections((s) => ({ ...s, help: !s.help }))
+                              }
+                            >
+                              <span className={`ecl-tree-twistie ${welcomeSections.help ? 'open' : ''}`} />
+                              Tips &amp; shortcuts
+                            </button>
+                            {welcomeSections.help && (
+                              <div className="ecl-welcome-section-body">
+                                <ul className="ecl-welcome-tips">
+                                  <li><kbd>Ctrl</kbd>+<kbd>O</kbd> Open Project</li>
+                                  <li><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> Open Resource</li>
+                                  <li><kbd>F5</kbd> Refresh</li>
+                                  <li>Use □ / – on view titles to maximize or hide</li>
+                                  <li>Drag sashes between views to resize</li>
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
+
+            {/* Horizontal sash + bottom view stack */}
+            {showBottom && !hideForMax('bottom') && !isMax('editor') && (
+              <>
+                {!isMax('bottom') && (
+                  <div
+                    className="ecl-sash ecl-sash-h"
+                    onMouseDown={(e) => startResize(e, 'bottom')}
+                    title="Resize"
+                  />
+                )}
+                <div
+                  className={`ecl-view ecl-bottom-view ${isMax('bottom') ? 'is-max' : ''}`}
+                  style={isMax('bottom') ? undefined : { height: bottomHeight }}
+                >
+                  <ViewChrome
+                    title="Console"
+                    panel="bottom"
+                    onHide={() => { setShowBottom(false); setMaximized(null); }}
+                    tabs={
+                      <>
+                        {[
+                          { id: 'problems', label: `Problems${problemLines.length ? ` (${problemLines.length})` : ''}` },
+                          { id: 'console', label: 'Console' },
+                          { id: 'progress', label: 'Progress' },
+                          { id: 'search', label: 'Search' },
+                        ].map((tab) => (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            className={`ecl-view-title-tab ${bottomTab === tab.id ? 'active' : ''}`}
+                            onClick={() => setBottomTab(tab.id)}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </>
+                    }
+                  >
+                    <div className="ecl-bottom-content">
+                      {bottomTab === 'problems' && (
+                        problemLines.length === 0 ? (
+                          <div className="ecl-bottom-empty">0 errors, 0 warnings, 0 infos</div>
+                        ) : (
+                          problemLines.map((line, i) => (
+                            <div key={i} className={`ecl-console-line ${line.t}`}>
+                              {line.at ? `[${line.at}] ` : ''}{line.m}
+                            </div>
+                          ))
+                        )
+                      )}
+                      {bottomTab === 'console' && (
+                        consoleLines.length === 0 ? (
+                          <div className="ecl-bottom-empty">Console is empty.</div>
+                        ) : (
+                          consoleLines.map((line, i) => (
+                            <div key={i} className={`ecl-console-line ${line.t}`}>
+                              {line.at ? `[${line.at}] ` : ''}{line.m}
+                            </div>
+                          ))
+                        )
+                      )}
+                      {bottomTab === 'progress' && (
+                        <div className="ecl-bottom-empty">
+                          {loading ? 'Operation in progress…' : 'No operations to display at this time.'}
+                        </div>
+                      )}
+                      {bottomTab === 'search' && (
+                        <div className="ecl-search-pane">
+                          <div className="ecl-search-row">
+                            <label>File name patterns:</label>
+                            <input type="text" className="ecl-field-input" placeholder="*" defaultValue="*" />
+                          </div>
+                          <div className="ecl-search-row">
+                            <label>Containing text:</label>
+                            <input type="text" className="ecl-field-input" placeholder="Search text" />
+                          </div>
+                          <button
+                            type="button"
+                            className="ecl-dialog-btn primary"
+                            onClick={() => {
+                              pushConsole('Search completed — 0 matches in workspace.');
+                              setBottomTab('console');
+                            }}
+                          >
+                            Search
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </ViewChrome>
+                </div>
+              </>
+            )}
+
+            {!showBottom && !hideForMax('bottom') && (
+              <div className="ecl-bottom-trim">
+                {['Problems', 'Console', 'Progress', 'Search'].map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="ecl-bottom-trim-tab"
+                    onClick={() => {
+                      setShowBottom(true);
+                      setBottomTab(label.toLowerCase());
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        {/* Outline sash + view */}
+        {showOutline && !hideForMax('outline') && (
+          <>
+            {!isMax('outline') && (
+              <div
+                className="ecl-sash ecl-sash-v"
+                onMouseDown={(e) => startResize(e, 'outline')}
+                title="Resize"
+              />
+            )}
+            <div
+              className={`ecl-view ecl-outline-view ${isMax('outline') ? 'is-max' : ''}`}
+              style={isMax('outline') ? undefined : { width: outlineWidth }}
+            >
+              <ViewChrome
+                title="Outline"
+                panel="outline"
+                onHide={() => { setShowOutline(false); setMaximized(null); }}
+              >
+                <div className="ecl-view-toolbar">
+                  <button
+                    type="button"
+                    className="ecl-mini-btn"
+                    title="Collapse All"
+                    onClick={() => {}}
+                  >
+                    ⊟
+                  </button>
+                </div>
+                <div className="ecl-view-content">
+                  {!activeEditor ? (
+                    <div className="ecl-empty-view">
+                      <p>An outline is not available.</p>
+                      <p className="ecl-muted-note">Open a resource to see its structure.</p>
+                    </div>
+                  ) : outlineSymbols.length === 0 ? (
+                    <div className="ecl-empty-view">
+                      <div className="ecl-tree-item active" style={{ paddingLeft: 8 }}>
+                        <span className={`ecl-tree-icon ecl-ft ecl-ft-${getFileIconKind(activeEditor.path)}`} />
+                        <span className="ecl-tree-name">{activeEditor.path.split('/').pop()}</span>
+                      </div>
+                      <p className="ecl-muted-note" style={{ padding: '8px' }}>
+                        No outline symbols detected for this resource type.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="ecl-tree-item ecl-project-root" style={{ paddingLeft: 8 }}>
+                        <span className={`ecl-tree-icon ecl-ft ecl-ft-${getFileIconKind(activeEditor.path)}`} />
+                        <span className="ecl-tree-name">{activeEditor.path.split('/').pop()}</span>
+                      </div>
+                      {outlineSymbols.map((sym, i) => (
+                        <div
+                          key={`${sym.line}-${i}`}
+                          className="ecl-tree-item ecl-file"
+                          style={{ paddingLeft: 22 }}
+                          title={`Line ${sym.line}`}
+                          onClick={() => {
+                            setCursorPos({ line: sym.line, col: 1 });
+                            setStatusMessage(`${activeEditor.path} : ${sym.line}`);
+                          }}
+                        >
+                          <span className={`ecl-outline-kind ecl-outline-${sym.kind}`} />
+                          <span className="ecl-tree-name">{sym.name}</span>
+                          <span className="ecl-outline-line">{sym.line}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </ViewChrome>
+            </div>
+          </>
+        )}
+
+        {!showOutline && !hideForMax('outline') && (
+          <button
+            type="button"
+            className="ecl-fastview ecl-fastview-right"
+            title="Show Outline"
+            onClick={() => setShowOutline(true)}
+          >
+            Outline
+          </button>
+        )}
       </div>
 
       {/* Status bar */}
@@ -1002,7 +1606,13 @@ const FileBrowser = () => {
               </button>
             </div>
             <div className="ecl-dialog-body ecl-about-body">
-              <div className="ecl-welcome-logo small">e</div>
+              <img
+                className="ecl-welcome-logo-img small"
+                src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
+                alt="Eclipse IDE"
+                width={40}
+                height={40}
+              />
               <h2>Eclipse IDE for Enterprise Java and Web Developers</h2>
               <p>Version 2024-12 (4.34.0)</p>
               <p className="ecl-muted">Resource Workbench · Local workspace client</p>

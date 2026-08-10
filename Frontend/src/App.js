@@ -13,7 +13,7 @@ import NoteState from './context/notes/noteState';
 import Alert from './components/Alert';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FileBrowser from './components/FileBrowser';
 
 function AppLayout({ showAlert, alert }) {
@@ -21,6 +21,21 @@ function AppLayout({ showAlert, alert }) {
   const isWorkbench =
     location.pathname.startsWith('/resource') ||
     location.pathname.startsWith('/code');
+
+  // Non-workbench pages: restore product tab title / favicon
+  useEffect(() => {
+    if (isWorkbench) return undefined;
+
+    document.title = 'Notable - Productivity Suite';
+    const icon =
+      document.querySelector("link[rel='icon']") ||
+      document.querySelector("link[rel='shortcut icon']");
+    if (icon) {
+      icon.type = 'image/svg+xml';
+      icon.href = `${process.env.PUBLIC_URL || ''}/favicon.svg?v=eclipse1`;
+    }
+    return undefined;
+  }, [isWorkbench, location.pathname]);
 
   return (
     <>
