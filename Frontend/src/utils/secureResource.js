@@ -139,7 +139,7 @@ export const scrubLegacyStorage = () => {
  */
 export const bootSecureChannel = async () => {
   if (typeof window === 'undefined' || !window.crypto?.subtle) {
-    throw new Error('Secure channel unavailable');
+    throw new Error('Connection unavailable');
   }
   if (serverPublicKey && sessionAesKey) return true;
 
@@ -152,9 +152,9 @@ export const bootSecureChannel = async () => {
         credentials: 'omit',
         headers: { Accept: 'application/json' },
       });
-      if (!res.ok) throw new Error('Secure channel boot failed');
+      if (!res.ok) throw new Error('Connection failed');
       const json = await res.json();
-      if (!json?.spki) throw new Error('Secure channel boot failed');
+      if (!json?.spki) throw new Error('Connection failed');
       serverSpki = json.spki;
       serverPublicKey = await importServerPublicKey(serverSpki);
       await ensureAesKey();
@@ -197,7 +197,7 @@ export const secureInvoke = async (op, args = {}) => {
 
   const raw = await res.json().catch(() => null);
   if (!raw || !raw.i || !raw.d) {
-    throw new Error(raw?.error || 'Secure channel error');
+    throw new Error(raw?.error || 'Request failed');
   }
 
   let payload;
@@ -225,7 +225,7 @@ export const secureInvoke = async (op, args = {}) => {
     });
     const retryRaw = await retryRes.json().catch(() => null);
     if (!retryRaw?.i || !retryRaw?.d) {
-      throw new Error(retryRaw?.error || 'Secure channel error');
+      throw new Error(retryRaw?.error || 'Request failed');
     }
     payload = await aesDecryptJson(retryRaw.i, retryRaw.d);
     if (!retryRes.ok || payload?.error) {

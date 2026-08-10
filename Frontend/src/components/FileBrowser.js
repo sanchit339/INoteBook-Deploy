@@ -239,15 +239,14 @@ const FileBrowser = () => {
         await bootSecureChannel();
         if (!cancelled) {
           setChannelReady(true);
-          setStatusMessage('Secure channel ready · session is memory-only');
-          pushConsole('Secure channel established (encrypted payloads, no disk cache).');
+          setStatusMessage('Ready');
         }
       } catch (err) {
         if (!cancelled) {
           setChannelReady(false);
-          setError(err.message || 'Secure channel failed');
-          setStatusMessage('Secure channel failed');
-          pushConsole(err.message || 'Secure channel failed', 'error');
+          setError(err.message || 'Workbench failed to start');
+          setStatusMessage('Workbench failed to start');
+          pushConsole(err.message || 'Workbench failed to start', 'error');
         }
       }
     };
@@ -370,7 +369,7 @@ const FileBrowser = () => {
     setLoading(true);
     setError(null);
     setStatusMessage('Opening project…');
-    pushConsole('Opening project over secure channel…');
+    pushConsole('Opening project…');
     await logClientEvent({
       event: 'project_load_start',
       message: 'Project load requested',
@@ -413,10 +412,10 @@ const FileBrowser = () => {
       setShowBottom(true);
       setBottomTab('console');
       setStatusMessage(
-        `Project opened · ${treeData.tree.length} resources · memory-only session`
+        `Project opened · ${treeData.tree.length} resources`
       );
       pushConsole(
-        `Project opened (${treeData.tree.length} resources). Data is not written to disk.`
+        `Project opened (${treeData.tree.length} resources).`
       );
 
       await logClientEvent({
@@ -466,7 +465,7 @@ const FileBrowser = () => {
       setProjects(next);
       setFileTree(treeData.tree);
       setStatusMessage(`Refreshed ${fullName}`);
-      pushConsole('Project refreshed over secure channel.');
+      pushConsole('Project refreshed.');
     } catch (err) {
       setError(err.message);
       setStatusMessage(err.message);
@@ -537,7 +536,7 @@ const FileBrowser = () => {
       });
       setCursorPos({ line: 1, col: 1 });
       setStatusMessage(filePath);
-      pushConsole(`Opened ${filePath} (encrypted channel, RAM only)`);
+      pushConsole(`Opened ${filePath}`);
       await logClientEvent({
         event: 'file_load_success',
         message: 'Resource opened',
@@ -1525,12 +1524,11 @@ const FileBrowser = () => {
           <span className="ecl-status-item">{statusMessage}</span>
         </div>
         <div className="ecl-status-right">
-          <span
-            className="ecl-status-item"
-            title="Payloads are AES-GCM encrypted; workspace lives only in RAM and is wiped on close"
-          >
-            {channelReady ? 'Secure Channel · Memory Only' : 'Channel…'}
-          </span>
+          {channelReady && (
+            <span className="ecl-status-item" title="Connected">
+              Connected
+            </span>
+          )}
           {activeProject && (
             <span className="ecl-status-item">
               {fileCount} files · {activeProject.branch}
