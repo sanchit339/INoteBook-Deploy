@@ -70,7 +70,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 10px;
+  padding: 0 0 0 10px;
   font-size: 12px;
   letter-spacing: 0.01em;
 }
@@ -87,6 +87,70 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ecl-win-controls {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.ecl-win-btn {
+  width: 40px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: #f0f0f0;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.ecl-win-btn:hover {
+  background: #5a5a5a;
+}
+
+.ecl-win-glyph {
+  display: block;
+  box-sizing: border-box;
+}
+
+.ecl-win-glyph.max {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #f0f0f0;
+}
+
+.ecl-win-glyph.restore {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #f0f0f0;
+  position: relative;
+}
+
+.ecl-win-glyph.restore::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #f0f0f0;
+  border-bottom: none;
+  border-left: none;
+}
+
+.eclipse-workbench:fullscreen,
+.eclipse-workbench:-webkit-full-screen {
+  width: 100%;
+  height: 100%;
+  inset: 0;
 }
 
 /* ----- Menu bar ----- */
@@ -236,6 +300,14 @@
 
 .ecl-tb-console {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1.5' y='2' width='13' height='12' fill='none' stroke='%23333' stroke-width='1.2'/%3E%3Cpath fill='none' stroke='%232c6eb5' stroke-width='1.2' d='M4 6l2 2-2 2M8 10h4'/%3E%3C/svg%3E");
+}
+
+.ecl-tb-fullscreen {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23333' stroke-width='1.4' d='M2 6V3h3M10 3h3v3M14 10v3h-3M6 13H3v-3'/%3E%3C/svg%3E");
+}
+
+.ecl-tb-restore {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23333' stroke-width='1.4' d='M6 2v4H2M10 2v4h4M14 10h-4v4M6 14v-4H2'/%3E%3C/svg%3E");
 }
 
 .ecl-tool-btn.active {

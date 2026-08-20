@@ -582,6 +582,8 @@ const MENU_ITEMS = [
       { id: 'toggle-bottom', label: 'Toggle Console' },
       { id: 'divider' },
       { id: 'reset-perspective', label: 'Reset Perspective' },
+      { id: 'divider' },
+      { id: 'fullscreen', label: 'Full Screen', shortcut: 'F11' },
     ],
   },
   {
@@ -630,7 +632,38 @@ const FileBrowser = () => {
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const dialogInputRef = useRef(null);
   const menuBarRef = useRef(null);
+  const workbenchRef = useRef(null);
   const blobCacheRef = useRef(new Map()); // key -> { blobUrl, mime }
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const getFullscreenElement = () =>
+    document.fullscreenElement || document.webkitFullscreenElement || null;
+
+  const toggleFullscreen = useCallback(async () => {
+    const el = workbenchRef.current;
+    try {
+      if (getFullscreenElement()) {
+        if (document.exitFullscreen) await document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } else if (el) {
+        if (el.requestFullscreen) await el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        else setStatusMessage('Fullscreen is not available in this browser');
+      }
+    } catch (err) {
+      setStatusMessage(err?.message || 'Fullscreen was blocked');
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFs = () => setIsFullscreen(!!getFullscreenElement());
+    document.addEventListener('fullscreenchange', onFs);
+    document.addEventListener('webkitfullscreenchange', onFs);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFs);
+      document.removeEventListener('webkitfullscreenchange', onFs);
+    };
+  }, []);
 
   const revokeAllBlobs = useCallback(() => {
     blobCacheRef.current.forEach((entry) => {
@@ -815,6 +848,10 @@ const FileBrowser = () => {
         e.preventDefault();
         refreshActiveProject();
       }
+      if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
       if (e.key === 'Escape') {
         setShowOpenDialog(false);
         setShowAbout(false);
@@ -824,7 +861,7 @@ const FileBrowser = () => {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects, activeProjectIndex]);
+  }, [projects, activeProjectIndex, toggleFullscreen]);
 
   const loadProject = async (inputOverride) => {
     const trimmedInput = (inputOverride ?? projectInput).trim();
@@ -1352,6 +1389,9 @@ const FileBrowser = () => {
       case 'search-file':
         setShowOpenDialog(true);
         break;
+      case 'fullscreen':
+        toggleFullscreen();
+        break;
       default:
         break;
     }
@@ -1485,7 +1525,10 @@ const FileBrowser = () => {
   );
 
   return (
-    <div className="eclipse-workbench">
+    <div
+      className={`eclipse-workbench ${isFullscreen ? 'is-fullscreen' : ''}`}
+      ref={workbenchRef}
+    >
       {/* Title bar strip */}
       <div className="ecl-titlebar">
         <img
@@ -1498,6 +1541,16 @@ const FileBrowser = () => {
         <span className="ecl-title-text">
           {buildWorkbenchTitle(activeEditor, activeProject)}
         </span>
+        <div className="ecl-win-controls">
+          <button
+            type="button"
+            className="ecl-win-btn"
+            title={isFullscreen ? 'Restore (F11)' : 'Full Screen (F11)'}
+            onClick={toggleFullscreen}
+          >
+            <span className={`ecl-win-glyph ${isFullscreen ? 'restore' : 'max'}`} />
+          </button>
+        </div>
       </div>
 
       {/* Menu bar */}
@@ -1527,7 +1580,11 @@ const FileBrowser = () => {
                       disabled={item.disabled}
                       onClick={() => handleMenuAction(item.id)}
                     >
-                      <span>{item.label}</span>
+                      <span>
+                        {item.id === 'fullscreen' && isFullscreen
+                          ? 'Exit Full Screen'
+                          : item.label}
+                      </span>
                       {item.shortcut && (
                         <span className="ecl-shortcut">{item.shortcut}</span>
                       )}
@@ -1583,6 +1640,14 @@ const FileBrowser = () => {
           onClick={() => { setShowBottom((v) => !v); setMaximized(null); }}
         >
           <span className="ecl-tb-icon ecl-tb-console" />
+        </button>
+        <button
+          type="button"
+          className={`ecl-tool-btn ${isFullscreen ? 'active' : ''}`}
+          title={isFullscreen ? 'Exit Full Screen (F11)' : 'Full Screen (F11)'}
+          onClick={toggleFullscreen}
+        >
+          <span className={`ecl-tb-icon ${isFullscreen ? 'ecl-tb-restore' : 'ecl-tb-fullscreen'}`} />
         </button>
         <div className="ecl-tool-sep" />
         <div className="ecl-toolbar-path">
