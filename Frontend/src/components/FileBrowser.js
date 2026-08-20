@@ -469,8 +469,10 @@ const setFavicon = (href) => {
     document.head.appendChild(link);
   }
   // bust cache so chrome picks up the new icon
-  const url = href.includes('?') ? href : `${href}?v=eclipse1`;
-  link.type = href.endsWith('.svg') ? 'image/svg+xml' : 'image/x-icon';
+  const url = href.includes('?') ? href : `${href}?v=jee2024`;
+  if (href.endsWith('.svg')) link.type = 'image/svg+xml';
+  else if (href.endsWith('.png')) link.type = 'image/png';
+  else link.type = 'image/x-icon';
   link.href = url;
 };
 
@@ -756,7 +758,7 @@ const FileBrowser = () => {
       document.querySelector("link[rel='shortcut icon']")?.getAttribute('href') ||
       '/favicon.ico';
 
-    setFavicon(`${process.env.PUBLIC_URL || ''}/favicon.svg`);
+    setFavicon(`${process.env.PUBLIC_URL || ''}/javaee-ide_x32.png`);
     document.title = buildWorkbenchTitle(
       openEditors.find((ed) => ed.path === activeEditorPath) || selectedFile,
       activeProjectIndex !== null ? projects[activeProjectIndex] : null
@@ -1485,7 +1487,7 @@ const FileBrowser = () => {
       <div className="ecl-titlebar">
         <img
           className="ecl-title-logo"
-          src={`${process.env.PUBLIC_URL || ''}/eclipse-icon.png`}
+          src={`${process.env.PUBLIC_URL || ''}/javaee-ide_x16.png`}
           alt=""
           width={16}
           height={16}
@@ -1596,7 +1598,15 @@ const FileBrowser = () => {
 
       {/* Perspective tabs */}
       <div className="ecl-perspective-bar">
-        <div className="ecl-perspective active">Java</div>
+        <div className="ecl-perspective active">
+          <img
+            src={`${process.env.PUBLIC_URL || ''}/javaee-ide_x16.png`}
+            alt=""
+            width={12}
+            height={12}
+          />
+          Java EE
+        </div>
         <div className="ecl-perspective">Debug</div>
         <div className="ecl-perspective">Resource</div>
         <div className="ecl-perspective-spacer" />
@@ -1848,15 +1858,24 @@ const FileBrowser = () => {
                         <div className="ecl-welcome-header">
                           <img
                             className="ecl-welcome-logo-img"
-                            src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
-                            alt="Eclipse IDE"
+                            src={`${process.env.PUBLIC_URL || ''}/javaee-ide_x48.png`}
+                            alt="Eclipse IDE for Enterprise Java and Web Developers"
                             width={48}
                             height={48}
                           />
-                          <div>
-                            <h1>Eclipse IDE</h1>
-                            <p className="ecl-welcome-sub">Resource Workbench — Overview</p>
+                          <div className="ecl-welcome-titles">
+                            <h1>Eclipse IDE for Enterprise Java and Web Developers</h1>
+                            <p className="ecl-welcome-sub">
+                              Version 2024-12 (4.34.0) · Java EE / Web Tools Platform
+                            </p>
                           </div>
+                          <img
+                            className="ecl-welcome-wtp"
+                            src={`${process.env.PUBLIC_URL || ''}/wtp_logo_96.png`}
+                            alt="Eclipse Web Tools Platform"
+                            width={72}
+                            height={72}
+                          />
                         </div>
 
                         <div className="ecl-welcome-grid">
@@ -2369,15 +2388,34 @@ const FileBrowser = () => {
             </div>
             <div className="ecl-dialog-body ecl-about-body">
               <img
-                className="ecl-welcome-logo-img small"
-                src={`${process.env.PUBLIC_URL || ''}/logo192.png`}
-                alt="Eclipse IDE"
-                width={40}
-                height={40}
+                className="ecl-about-banner"
+                src={`${process.env.PUBLIC_URL || ''}/eclipse_lg.png`}
+                srcSet={`${process.env.PUBLIC_URL || ''}/eclipse_lg.png 1x, ${process.env.PUBLIC_URL || ''}/eclipse_lg@2x.png 2x`}
+                alt=""
+                width={116}
+                height={302}
               />
-              <h2>Eclipse IDE for Enterprise Java and Web Developers</h2>
-              <p>Version 2024-12 (4.34.0)</p>
-              <p className="ecl-muted">Resource Workbench · Local workspace client</p>
+              <div className="ecl-about-copy">
+                <div className="ecl-about-product">
+                  <img
+                    src={`${process.env.PUBLIC_URL || ''}/javaee-ide_x32.png`}
+                    alt=""
+                    width={32}
+                    height={32}
+                  />
+                  <h2>Eclipse IDE for Enterprise Java and Web Developers</h2>
+                </div>
+                <p>Version 2024-12 (4.34.0)</p>
+                <p className="ecl-muted">
+                  (c) Copyright Eclipse contributors and others 2000, 2024.
+                  Eclipse and the Eclipse logo are trademarks of the Eclipse
+                  Foundation, Inc.
+                </p>
+                <p className="ecl-muted">
+                  This package includes Java development tools, Maven, Gradle,
+                  Git, JavaScript, TypeScript, JPA, and Web Tools Platform.
+                </p>
+              </div>
             </div>
             <div className="ecl-dialog-footer">
               <button type="button" className="ecl-dialog-btn primary" onClick={() => setShowAbout(false)}>

@@ -1,11 +1,21 @@
 {
   "short_name": "Eclipse IDE",
-  "name": "Eclipse IDE Resource Workbench",
+  "name": "Eclipse IDE for Enterprise Java and Web Developers",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "48x48 32x32 16x16",
-      "type": "image/x-icon"
+      "src": "javaee-ide_x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "javaee-ide_x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "javaee-ide_x48.png",
+      "sizes": "48x48",
+      "type": "image/png"
     },
     {
       "src": "favicon.svg",
@@ -25,6 +35,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#2a2758",
+  "theme_color": "#2c2255",
   "background_color": "#f0f0f0"
 }

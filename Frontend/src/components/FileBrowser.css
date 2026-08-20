@@ -79,8 +79,8 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  border-radius: 2px;
-  image-rendering: auto;
+  border-radius: 0;
+  image-rendering: pixelated;
 }
 
 .ecl-title-text {
@@ -298,6 +298,9 @@
 }
 
 .ecl-perspective {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 3px 12px;
   background: transparent;
   color: var(--ecl-text-muted);
@@ -306,6 +309,12 @@
   border-radius: 3px 3px 0 0;
   font-size: 11px;
   cursor: default;
+}
+
+.ecl-perspective img {
+  width: 12px;
+  height: 12px;
+  image-rendering: pixelated;
 }
 
 .ecl-perspective.active {
@@ -1742,17 +1751,30 @@
   margin-bottom: 16px;
 }
 
+.ecl-welcome-titles {
+  flex: 1;
+  min-width: 0;
+}
+
 .ecl-welcome-header h1 {
   margin: 0 0 2px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #222;
   text-align: left;
+  line-height: 1.25;
 }
 
 .ecl-welcome-header .ecl-welcome-sub {
   margin: 0;
   text-align: left;
+}
+
+.ecl-welcome-wtp {
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 
 .ecl-welcome-grid {
@@ -1857,18 +1879,19 @@
 
 .ecl-welcome-logo-img {
   display: block;
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 12px;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  border-radius: 6px;
+  image-rendering: auto;
+  flex-shrink: 0;
 }
 
 .ecl-welcome-logo-img.small {
-  width: 40px;
-  height: 40px;
-  margin: 0 auto 8px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  border-radius: 4px;
 }
 
 .ecl-welcome-card h1 {
@@ -2164,14 +2187,60 @@
   cursor: default;
 }
 
+.ecl-dialog.ecl-about {
+  width: min(620px, 94vw);
+}
+
 .ecl-about-body {
-  text-align: center;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  text-align: left;
+  background: #fff;
+}
+
+.ecl-about-banner {
+  width: 116px;
+  height: 302px;
+  object-fit: cover;
+  object-position: center top;
+  flex-shrink: 0;
+  display: block;
+  background: #0b0a14;
+}
+
+.ecl-about-copy {
+  flex: 1;
+  min-width: 0;
+  padding: 16px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ecl-about-product {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ecl-about-product img {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .ecl-about-body h2 {
   font-size: 14px;
-  margin: 8px 0 4px;
+  margin: 0;
   font-weight: 600;
+  line-height: 1.3;
+}
+
+.ecl-about-copy p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .ecl-muted {

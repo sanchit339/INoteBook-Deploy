@@ -1,14 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Eclipse IDE for Enterprise Java and Web Developers">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+    <linearGradient id="jeeBg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#2a2758"/>
-      <stop offset="100%" stop-color="#1a1840"/>
+      <stop offset="100%" stop-color="#16132e"/>
     </linearGradient>
+    <linearGradient id="mug" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7f7f5"/>
+      <stop offset="100%" stop-color="#d8d8d4"/>
+    </linearGradient>
+    <clipPath id="mugClip">
+      <path d="M16 20h22c1.4 0 2.5 1.2 2.5 2.6v16.8c0 5.4-5.2 9.6-13.5 9.6S13.5 44.8 13.5 39.4V22.6C13.5 21.2 14.6 20 16 20z"/>
+    </clipPath>
   </defs>
-  <rect x="2" y="2" width="60" height="60" rx="10" fill="url(#bg)"/>
-  <circle cx="30" cy="32" r="16" fill="#f2f4f8"/>
-  <circle cx="38" cy="30" r="13.5" fill="#1a1840"/>
-  <path d="M46 40 A18 18 0 0 1 28 50" fill="none" stroke="#f28c28" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="18" cy="18" r="3.2" fill="#f29632"/>
+  <rect x="1" y="1" width="62" height="62" rx="12" fill="url(#jeeBg)"/>
+  <!-- mug handle -->
+  <path d="M41 26c7 0 10 4 10 8.5S48 43 41 43" fill="none" stroke="#e6e6e2" stroke-width="4.2" stroke-linecap="round"/>
+  <!-- mug body -->
+  <path d="M16 20h22c1.4 0 2.5 1.2 2.5 2.6v16.8c0 5.4-5.2 9.6-13.5 9.6S13.5 44.8 13.5 39.4V22.6C13.5 21.2 14.6 20 16 20z" fill="url(#mug)"/>
+  <!-- eclipse globe inside mug -->
+  <g clip-path="url(#mugClip)">
+    <circle cx="27" cy="34" r="12.5" fill="#cfd6de"/>
+    <circle cx="33.5" cy="32.5" r="10.5" fill="#2c2255"/>
+    <path d="M38 40.5 A13 13 0 0 1 24 48" fill="none" stroke="#f7941e" stroke-width="3.2" stroke-linecap="round"/>
+  </g>
+  <!-- orange orbit around mug -->
+  <path d="M44 42 A16 16 0 0 1 24 52" fill="none" stroke="#f7941e" stroke-width="3.4" stroke-linecap="round"/>
+  <!-- JDT public class overlay -->
+  <circle cx="46" cy="46" r="13" fill="#2e7d32"/>
+  <text x="46" y="51.2" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" fill="#ffffff">C</text>
 </svg>

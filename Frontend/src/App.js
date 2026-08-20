@@ -32,7 +32,7 @@ function AppLayout({ showAlert, alert }) {
       document.querySelector("link[rel='shortcut icon']");
     if (icon) {
       icon.type = 'image/svg+xml';
-      icon.href = `${process.env.PUBLIC_URL || ''}/favicon.svg?v=eclipse1`;
+      icon.href = `${process.env.PUBLIC_URL || ''}/favicon.svg?v=jee2024`;
     }
     return undefined;
   }, [isWorkbench, location.pathname]);
