@@ -219,19 +219,19 @@
 }
 
 .ecl-tb-open {
-  background-image: url("/jdt-icons/fldr_obj@2x.png");
+  background-image: url("../jdt-icons/fldr_obj@2x.png");
 }
 
 .ecl-tb-refresh {
-  background-image: url("/jdt-icons/refresh_nav@2x.png");
+  background-image: url("../jdt-icons/refresh_nav@2x.png");
 }
 
 .ecl-tb-explorer {
-  background-image: url("/jdt-icons/eview_package@2x.png");
+  background-image: url("../jdt-icons/eview_package@2x.png");
 }
 
 .ecl-tb-outline {
-  background-image: url("/jdt-icons/eview_class_hi@2x.png");
+  background-image: url("../jdt-icons/eview_class_hi@2x.png");
 }
 
 .ecl-tb-console {
@@ -352,7 +352,7 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  background: url("/jdt-icons/newjprj_wiz@2x.png") center/16px 16px no-repeat;
+  background: url("../jdt-icons/newjprj_wiz@2x.png") center/16px 16px no-repeat;
 }
 
 .ecl-chip-name {
@@ -859,13 +859,13 @@
 }
 
 .ecl-project-icon {
-  background-image: url("/jdt-icons/newjprj_wiz@2x.png");
+  background-image: url("../jdt-icons/newjprj_wiz@2x.png");
   background-size: 16px 16px;
 }
 
 .ecl-folder-closed,
 .ecl-folder-open {
-  background-image: url("/jdt-icons/fldr_obj@2x.png");
+  background-image: url("../jdt-icons/fldr_obj@2x.png");
   background-size: 16px 16px;
 }
 
@@ -874,7 +874,7 @@
   width: 16px;
   height: 16px;
   min-width: 16px;
-  background-image: url("/jdt-icons/package_obj@2x.png");
+  background-image: url("../jdt-icons/package_obj@2x.png");
   background-size: 16px 16px;
 }
 
@@ -882,13 +882,13 @@
   width: 16px;
   height: 16px;
   min-width: 16px;
-  background-image: url("/jdt-icons/packagefolder_obj@2x.png");
+  background-image: url("../jdt-icons/packagefolder_obj@2x.png");
   background-size: 16px 16px;
 }
 
 /* Generic blank document (official file_obj) */
 .ecl-file-icon {
-  background-image: url("/jdt-icons/file_obj@2x.png");
+  background-image: url("../jdt-icons/file_obj@2x.png");
   background-size: 16px 16px;
   margin-left: 12px;
 }
@@ -938,17 +938,17 @@
 /* Java compilation unit — official JDT jcu_obj (white page + J) */
 .ecl-ft-java,
 .ecl-ft-kt {
-  background-image: url("/jdt-icons/jcu_obj@2x.png") !important;
+  background-image: url("../jdt-icons/jcu_obj@2x.png") !important;
   background-color: transparent !important;
 }
 
 .ecl-ft-classfile {
-  background-image: url("/jdt-icons/classf_obj@2x.png") !important;
+  background-image: url("../jdt-icons/classf_obj@2x.png") !important;
   background-color: transparent !important;
 }
 
 .ecl-ft-jar {
-  background-image: url("/jdt-icons/jar_obj@2x.png") !important;
+  background-image: url("../jdt-icons/jar_obj@2x.png") !important;
   background-color: transparent !important;
 }
 
@@ -995,7 +995,7 @@
 .ecl-ft-env,
 .ecl-ft-license,
 .ecl-ft-file {
-  background-image: url("/jdt-icons/file_obj@2x.png") !important;
+  background-image: url("../jdt-icons/file_obj@2x.png") !important;
   background-color: transparent !important;
   border: none !important;
   color: transparent;
@@ -1124,7 +1124,7 @@
   width: 16px;
   height: 16px;
   flex-shrink: 0;
-  background: url("/jdt-icons/file_obj@2x.png") center/16px 16px no-repeat;
+  background: url("../jdt-icons/file_obj@2x.png") center/16px 16px no-repeat;
 }
 
 .ecl-tab-label {
@@ -1993,27 +1993,27 @@
 }
 
 .ecl-jdt-c {
-  background-image: url("/jdt-icons/class_obj@2x.png");
+  background-image: url("../jdt-icons/class_obj@2x.png");
 }
 
 .ecl-jdt-i {
-  background-image: url("/jdt-icons/int_obj@2x.png");
+  background-image: url("../jdt-icons/int_obj@2x.png");
 }
 
 .ecl-jdt-e {
-  background-image: url("/jdt-icons/enum_obj@2x.png");
+  background-image: url("../jdt-icons/enum_obj@2x.png");
 }
 
 .ecl-jdt-f {
-  background-image: url("/jdt-icons/field_public_obj@2x.png");
+  background-image: url("../jdt-icons/field_public_obj@2x.png");
 }
 
 .ecl-jdt-m {
-  background-image: url("/jdt-icons/methpub_obj@2x.png");
+  background-image: url("../jdt-icons/methpub_obj@2x.png");
 }
 
 .ecl-jdt-h {
-  background-image: url("/jdt-icons/file_obj@2x.png");
+  background-image: url("../jdt-icons/file_obj@2x.png");
 }
 
 .ecl-view-tab-with-icon {
@@ -2032,23 +2032,23 @@
 }
 
 .ecl-tab-mini-explorer {
-  background-image: url("/jdt-icons/eview_package@2x.png");
+  background-image: url("../jdt-icons/eview_package@2x.png");
 }
 
 .ecl-tab-mini-problems {
-  background-image: url("/jdt-icons/problems_view@2x.png");
+  background-image: url("../jdt-icons/problems_view@2x.png");
 }
 
 .ecl-tab-mini-javadoc {
-  background-image: url("/jdt-icons/eview_javadoc@2x.png");
+  background-image: url("../jdt-icons/eview_javadoc@2x.png");
 }
 
 .ecl-tab-mini-declaration {
-  background-image: url("/jdt-icons/eview_class_hi@2x.png");
+  background-image: url("../jdt-icons/eview_class_hi@2x.png");
 }
 
 .ecl-tab-mini-search {
-  background-image: url("/jdt-icons/searchres@2x.png");
+  background-image: url("../jdt-icons/searchres@2x.png");
 }
 
 .ecl-tab-mini-console {
