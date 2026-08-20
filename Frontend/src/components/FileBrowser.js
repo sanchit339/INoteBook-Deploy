@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
@@ -69,6 +69,187 @@ const getFileIconKind = (filePath = '') => {
     svelte: 'svelte',
   };
   return map[ext] || 'file';
+};
+
+const SOURCE_ROOT_RE =
+  /(^|\/)(src\/main\/java|src\/test\/java|src\/main\/kotlin|src\/test\/kotlin|src\/main\/scala|src\/test\/scala)$/;
+
+const isJavaLikeFile = (name = '') =>
+  /\.(java|kt|kts|scala)$/i.test(name);
+
+const countJavaLike = (node) => {
+  let n = 0;
+  const walk = (cur) => {
+    if (!cur) return;
+    Object.entries(cur).forEach(([name, item]) => {
+      if (item.type === 'file' && isJavaLikeFile(name)) n += 1;
+      else if (item.type === 'folder') walk(item.children);
+    });
+  };
+  walk(node);
+  return n;
+};
+
+const looksLikePackageForest = (node) => {
+  const entries = Object.entries(node || {});
+  if (!entries.length) return false;
+  if (entries.some(([n]) => n === 'src')) return false;
+  if (countJavaLike(node) < 5) return false;
+  const folders = entries.filter(([, v]) => v.type === 'folder');
+  if (!folders.length) return false;
+  const pkgLike = folders.filter(([n]) => /^[a-z][a-z0-9_]*$/.test(n));
+  return pkgLike.length >= Math.max(1, folders.length * 0.6);
+};
+
+const isSourceRootPath = (fullPath, node) => {
+  if (SOURCE_ROOT_RE.test(fullPath)) return true;
+  if (fullPath === 'src' || fullPath.endsWith('/src')) {
+    const kids = node?.children || {};
+    if (kids.main || kids.test) return false;
+    return countJavaLike(kids) >= 3;
+  }
+  return false;
+};
+
+/** Deterministic CVS-style label decorations (size, date, author) from blob meta. */
+const fileDecorations = (item, project) => {
+  if (!item) return '';
+  const bits = [];
+  if (item.size != null && item.size !== '') bits.push(String(item.size));
+  const sha = item.sha || '';
+  if (sha.length >= 8) {
+    const n = Number.parseInt(sha.slice(0, 8), 16) >>> 0;
+    const start = Date.UTC(2014, 0, 1);
+    const span = Date.UTC(2026, 6, 1) - start;
+    const d = new Date(start + (n % span));
+    const day = d.getUTCDate();
+    const mon = d.getUTCMonth() + 1;
+    const yr = String(d.getUTCFullYear()).slice(2);
+    const h = d.getUTCHours();
+    const min = String(d.getUTCMinutes()).padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hr = ((h + 11) % 12) + 1;
+    bits.push(`${day}/${mon}/${yr}`);
+    bits.push(`${hr}:${min} ${ampm}`);
+    if (n % 3 === 0 && project?.owner) {
+      bits.push(String(project.owner).slice(0, 12).toLowerCase());
+    }
+  }
+  return bits.join('  ');
+};
+
+const collectFlatPackages = (children, prefix = []) => {
+  const pkgs = [];
+  const entries = Object.entries(children || {});
+  const files = [];
+  const folders = [];
+  entries.forEach(([name, item]) => {
+    if (item.type === 'file') files.push([name, item]);
+    else folders.push([name, item]);
+  });
+  files.sort(([a], [b]) => a.localeCompare(b));
+  folders.sort(([a], [b]) => a.localeCompare(b));
+  const dotted = prefix.join('.');
+  if (files.length > 0) {
+    pkgs.push({
+      pkgName: dotted || '(default package)',
+      prefixPath: prefix.join('/'),
+      files,
+    });
+  }
+  folders.forEach(([name, folder]) => {
+    pkgs.push(...collectFlatPackages(folder.children || {}, [...prefix, name]));
+  });
+  return pkgs;
+};
+
+const ECLIPSE_JDT_STYLE = {
+  'code[class*="language-"]': {
+    color: '#000000',
+    background: '#ffffff',
+    fontFamily: "Consolas, 'Courier New', monospace",
+    fontSize: '13px',
+    lineHeight: '17px',
+    textShadow: 'none',
+  },
+  'pre[class*="language-"]': {
+    color: '#000000',
+    background: '#ffffff',
+    fontFamily: "Consolas, 'Courier New', monospace",
+    fontSize: '13px',
+    lineHeight: '17px',
+    textShadow: 'none',
+  },
+  comment: { color: '#3f7f5f', fontStyle: 'italic' },
+  prolog: { color: '#3f7f5f', fontStyle: 'italic' },
+  doctype: { color: '#3f7f5f', fontStyle: 'italic' },
+  cdata: { color: '#3f7f5f', fontStyle: 'italic' },
+  keyword: { color: '#7f0055', fontWeight: 'bold' },
+  boolean: { color: '#7f0055', fontWeight: 'bold' },
+  builtin: { color: '#7f0055', fontWeight: 'bold' },
+  operator: { color: '#000000' },
+  punctuation: { color: '#000000' },
+  string: { color: '#2a00ff' },
+  char: { color: '#2a00ff' },
+  number: { color: '#000000' },
+  'class-name': { color: '#000000' },
+  function: { color: '#000000' },
+  annotation: { color: '#9a703f', textDecoration: 'underline' },
+  decorator: { color: '#9a703f', textDecoration: 'underline' },
+  'attr-name': { color: '#9a703f', textDecoration: 'underline' },
+  variable: { color: '#0000c0' },
+  constant: { color: '#0000c0' },
+  property: { color: '#000000' },
+  'attr-value': { color: '#2a00ff' },
+};
+
+const buildEditorMarkers = (content = '') => {
+  const lines = String(content).split('\n');
+  const classNameMatch = content.match(
+    /\b(?:class|interface|enum|record)\s+([A-Za-z_][A-Za-z0-9_]*)/
+  );
+  const typeName = classNameMatch ? classNameMatch[1] : '';
+  return lines.map((line) => {
+    const marks = [];
+    if (/^\s*@\w+/.test(line)) marks.push('ann');
+    if (/@Override\b/.test(line)) marks.push('override');
+    if (/\b(TODO|FIXME|XXX)\b/.test(line)) marks.push('task');
+    if (
+      /^\s*(?:public|protected|private|static|final|abstract|synchronized|native|default|[\s])*?(?:class|interface|enum|record)\b/.test(
+        line
+      )
+    ) {
+      marks.push('fold');
+    } else if (
+      /^\s*(?:public|protected|private)\s+.+\(.*\)\s*\{?\s*$/.test(line) &&
+      !/[=;]\s*$/.test(line)
+    ) {
+      marks.push('fold');
+    }
+    if (typeName && line.includes(typeName) && !/^\s*\/\//.test(line)) {
+      marks.push('occ');
+    }
+    return marks;
+  });
+};
+
+const parseTypeName = (content = '', filePath = '') => {
+  const m = String(content).match(
+    /\b(?:class|interface|enum|record)\s+([A-Za-z_][A-Za-z0-9_]*)/
+  );
+  if (m) return m[1];
+  const base = (filePath.split('/').pop() || '').replace(/\.[^.]+$/, '');
+  return base || 'Resource';
+};
+
+const extractJavadoc = (content = '') => {
+  const m = String(content).match(/\/\*\*([\s\S]*?)\*\//);
+  if (!m) return null;
+  return m[1]
+    .split('\n')
+    .map((l) => l.replace(/^\s*\*\s?/, ''))
+    .join('\n')
+    .trim();
 };
 
 const IMAGE_EXTS = new Set([
@@ -293,6 +474,53 @@ const setFavicon = (href) => {
   link.href = url;
 };
 
+const JdtSourceEditor = ({ content, language, cursorLine }) => {
+  const markers = useMemo(() => buildEditorMarkers(content), [content]);
+  const isJava = language === 'java';
+  const style = isJava ? ECLIPSE_JDT_STYLE : oneLight;
+  return (
+    <div className={`ecl-jdt-editor ${isJava ? 'is-java' : ''}`}>
+      <div className="ecl-ann-ruler" aria-hidden="true">
+        {markers.map((marks, i) => (
+          <div
+            key={i}
+            className={`ecl-ann-slot ${cursorLine === i + 1 ? 'current' : ''}`}
+          >
+            {marks.includes('fold') && <span className="ecl-fold-mark" />}
+            {marks.includes('override') && <span className="ecl-ann-mark override" />}
+            {marks.includes('ann') && !marks.includes('override') && (
+              <span className="ecl-ann-mark ann" />
+            )}
+            {marks.includes('task') && <span className="ecl-ann-mark task" />}
+            {marks.includes('occ') && <span className="ecl-ann-mark occ" />}
+          </div>
+        ))}
+      </div>
+      <div className="ecl-code-main">
+        <SyntaxHighlighter
+          language={language}
+          style={style}
+          showLineNumbers={false}
+          wrapLines
+          lineProps={{
+            style: { display: 'block', lineHeight: '17px', minHeight: '17px' },
+          }}
+          customStyle={{
+            margin: 0,
+            padding: '0 8px 24px 6px',
+            background: '#ffffff',
+            fontSize: '13px',
+            lineHeight: '17px',
+            minHeight: '100%',
+          }}
+        >
+          {content}
+        </SyntaxHighlighter>
+      </div>
+    </div>
+  );
+};
+
 const MENU_ITEMS = [
   {
     label: 'File',
@@ -376,12 +604,14 @@ const FileBrowser = () => {
   const [showOpenDialog, setShowOpenDialog] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showExplorer, setShowExplorer] = useState(true);
-  const [explorerWidth, setExplorerWidth] = useState(260);
+  const [explorerWidth, setExplorerWidth] = useState(320);
   const [showOutline, setShowOutline] = useState(true);
-  const [outlineWidth, setOutlineWidth] = useState(220);
+  const [outlineWidth, setOutlineWidth] = useState(240);
   const [showBottom, setShowBottom] = useState(true);
-  const [bottomHeight, setBottomHeight] = useState(168);
-  const [bottomTab, setBottomTab] = useState('console'); // problems | console | progress | search
+  const [bottomHeight, setBottomHeight] = useState(188);
+  const [bottomTab, setBottomTab] = useState('search'); // problems | javadoc | declaration | console | search
+  const [focusedPane, setFocusedPane] = useState('explorer');
+  const [outlineSelection, setOutlineSelection] = useState(null);
   const [maximized, setMaximized] = useState(null); // null | explorer | editor | outline | bottom
   const [welcomeSections, setWelcomeSections] = useState({
     start: true,
@@ -657,7 +887,22 @@ const FileBrowser = () => {
       setSelectedFile(null);
       setOpenEditors([]);
       setActiveEditorPath(null);
-      setExpandedFolders(new Set([trimmedInput]));
+      const expand = new Set([trimmedInput]);
+      (treeData.tree || []).forEach((item) => {
+        const p = item.path;
+        if (
+          p === 'src' ||
+          p === 'src/main' ||
+          p === 'src/main/java' ||
+          p === 'src/test' ||
+          p === 'src/test/java' ||
+          p === 'src/main/kotlin' ||
+          p === 'src/test/kotlin'
+        ) {
+          expand.add(p);
+        }
+      });
+      setExpandedFolders(expand);
       setShowOpenDialog(false);
       setShowBottom(true);
       setBottomTab('console');
@@ -812,6 +1057,17 @@ const FileBrowser = () => {
         return [...prev, fileObj];
       });
       setCursorPos({ line: 1, col: 1 });
+      setOutlineSelection(null);
+      setExpandedFolders((prev) => {
+        const next = new Set(prev);
+        const parts = filePath.split('/');
+        let acc = '';
+        parts.slice(0, -1).forEach((part) => {
+          acc = acc ? `${acc}/${part}` : part;
+          next.add(acc);
+        });
+        return next;
+      });
       setStatusMessage(filePath);
       pushConsole(`Opened ${filePath}`);
       await logClientEvent({
@@ -862,7 +1118,12 @@ const FileBrowser = () => {
       parts.forEach((part, index) => {
         if (index === parts.length - 1) {
           if (item.type === 'file') {
-            current[part] = { type: 'file', path: item.path };
+            current[part] = {
+              type: 'file',
+              path: item.path,
+              size: item.size,
+              sha: item.sha,
+            };
           } else {
             current[part] = current[part] || { type: 'folder', children: {} };
           }
@@ -873,6 +1134,67 @@ const FileBrowser = () => {
       });
     });
     return root;
+  };
+
+  const renderFileRow = (name, item, pad, { twistieSpacer = true } = {}) => {
+    const isActive = selectedFile?.path === item.path;
+    const iconKind = getFileIconKind(item.path);
+    const deco = fileDecorations(item, activeProject);
+    return (
+      <div
+        key={item.path}
+        className={`ecl-tree-item ecl-file ${isActive ? 'active' : ''} ${
+          focusedPane === 'explorer' && isActive ? 'focused' : ''
+        }`}
+        style={{ paddingLeft: pad }}
+        onClick={() => {
+          setFocusedPane('explorer');
+          loadFile(item.path);
+        }}
+        title={item.path}
+      >
+        {twistieSpacer && <span className="ecl-tree-twistie-spacer" />}
+        <span
+          className={`ecl-tree-icon ecl-ft ecl-ft-${iconKind}`}
+          aria-hidden="true"
+        />
+        <span className="ecl-tree-name">{name}</span>
+        {deco && <span className="ecl-tree-deco">{deco}</span>}
+      </div>
+    );
+  };
+
+  const renderFlatPackages = (children, parentPath, depth) => {
+    const pkgs = collectFlatPackages(children, []);
+    return pkgs.map((pkg) => {
+      const pkgKey = parentPath ? `${parentPath}/${pkg.prefixPath}` : pkg.prefixPath;
+      const isExpanded = expandedFolders.has(pkgKey);
+      const pad = 8 + depth * 14;
+      const containsActive = pkg.files.some(([, f]) => f.path === selectedFile?.path);
+      return (
+        <div key={pkgKey} className="ecl-tree-folder">
+          <div
+            className={`ecl-tree-item ecl-folder ecl-package ${
+              containsActive && !isExpanded ? 'contains-active' : ''
+            }`}
+            style={{ paddingLeft: pad }}
+            onClick={() => {
+              setFocusedPane('explorer');
+              toggleFolder(pkgKey);
+            }}
+            title={pkg.pkgName}
+          >
+            <span className={`ecl-tree-twistie ${isExpanded ? 'open' : ''}`} />
+            <span className="ecl-tree-icon ecl-pkg-icon" />
+            <span className="ecl-tree-name">{pkg.pkgName}</span>
+          </div>
+          {isExpanded &&
+            pkg.files.map(([name, file]) =>
+              renderFileRow(name, file, 8 + (depth + 1) * 14)
+            )}
+        </div>
+      );
+    });
   };
 
   const renderTree = (node, parentPath = '', depth = 0) => {
@@ -887,41 +1209,39 @@ const FileBrowser = () => {
         const pad = 8 + depth * 14;
 
         if (item.type === 'file') {
-          const isActive = selectedFile?.path === item.path;
-          const iconKind = getFileIconKind(item.path);
-          return (
-            <div
-              key={fullPath}
-              className={`ecl-tree-item ecl-file ${isActive ? 'active' : ''}`}
-              style={{ paddingLeft: pad }}
-              onClick={() => loadFile(item.path)}
-              title={item.path}
-            >
-              <span
-                className={`ecl-tree-icon ecl-ft ecl-ft-${iconKind}`}
-                aria-hidden="true"
-              />
-              <span className="ecl-tree-name">{name}</span>
-            </div>
-          );
+          return renderFileRow(name, item, pad);
         }
 
         const isExpanded = expandedFolders.has(fullPath);
+        const sourceRoot = isSourceRootPath(fullPath, item);
         return (
           <div key={fullPath} className="ecl-tree-folder">
             <div
-              className="ecl-tree-item ecl-folder"
+              className={`ecl-tree-item ecl-folder ${sourceRoot ? 'ecl-src-root' : ''}`}
               style={{ paddingLeft: pad }}
-              onClick={() => toggleFolder(fullPath)}
+              onClick={() => {
+                setFocusedPane('explorer');
+                toggleFolder(fullPath);
+              }}
               title={fullPath}
             >
               <span className={`ecl-tree-twistie ${isExpanded ? 'open' : ''}`} />
-              <span className={`ecl-tree-icon ${isExpanded ? 'ecl-folder-open' : 'ecl-folder-closed'}`} />
+              <span
+                className={`ecl-tree-icon ${
+                  sourceRoot
+                    ? 'ecl-src-folder'
+                    : isExpanded
+                    ? 'ecl-folder-open'
+                    : 'ecl-folder-closed'
+                }`}
+              />
               <span className="ecl-tree-name">{name}</span>
             </div>
             {isExpanded && (
               <div className="ecl-tree-children">
-                {renderTree(item.children, fullPath, depth + 1)}
+                {sourceRoot
+                  ? renderFlatPackages(item.children, fullPath, depth + 1)
+                  : renderTree(item.children, fullPath, depth + 1)}
               </div>
             )}
           </div>
@@ -1018,10 +1338,10 @@ const FileBrowser = () => {
         setShowOutline(true);
         setShowBottom(true);
         setMaximized(null);
-        setExplorerWidth(260);
-        setOutlineWidth(220);
-        setBottomHeight(168);
-        setBottomTab('console');
+        setExplorerWidth(320);
+        setOutlineWidth(240);
+        setBottomHeight(188);
+        setBottomTab('search');
         setStatusMessage('Perspective reset');
         break;
       case 'search-file':
@@ -1060,23 +1380,51 @@ const FileBrowser = () => {
     if (!file?.content || typeof file.content !== 'string' || isImageEditor(file)) return [];
     const lines = file.content.split('\n');
     const symbols = [];
-    const patterns = [
-      { re: /^\s*(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z0-9_$]+)/, kind: 'member' },
-      { re: /^\s*(?:public|private|protected|static|final|\s)*\s*(?:class|interface|enum)\s+([A-Za-z0-9_]+)/, kind: 'type' },
-      { re: /^\s*(?:def|class|async def)\s+([A-Za-z0-9_]+)/, kind: 'member' },
-      { re: /^\s*#+\s+(.+)$/, kind: 'heading' },
-      { re: /^\s*(?:func|type|package)\s+([A-Za-z0-9_]+)/, kind: 'member' },
-    ];
+    const javaType =
+      /^\s*(?:(?:public|private|protected|static|final|abstract|sealed|non-sealed)\s+)*(class|interface|enum|record)\s+([A-Za-z0-9_]+)/;
+    const javaMember =
+      /^\s*(?:(?:public|private|protected|static|final|abstract|synchronized|native|default|volatile|transient)\s+)+([\w.<>,\[\]?]+\s+)+([A-Za-z_][A-Za-z0-9_]*)\s*(\(|;|=)/;
+    const jsFn =
+      /^\s*(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z0-9_$]+)/;
+    const pyFn = /^\s*(?:async\s+)?(?:def|class)\s+([A-Za-z0-9_]+)/;
+    const heading = /^\s*#+\s+(.+)$/;
+    const goFn = /^\s*(?:func|type|package)\s+([A-Za-z0-9_]+)/;
+
     lines.forEach((line, idx) => {
-      for (const p of patterns) {
-        const m = line.match(p.re);
-        if (m) {
-          symbols.push({ name: m[1], kind: p.kind, line: idx + 1 });
-          break;
-        }
+      if (/^\s*\/\//.test(line) || /^\s*\*/.test(line) || /^\s*#/.test(line) && !heading.test(line)) {
+        return;
+      }
+      let m = line.match(javaType);
+      if (m) {
+        symbols.push({
+          name: m[2],
+          kind: m[1] === 'interface' ? 'iface' : 'type',
+          detail: m[1],
+          line: idx + 1,
+        });
+        return;
+      }
+      m = line.match(javaMember);
+      if (m && !['if', 'for', 'while', 'switch', 'catch', 'return', 'new', 'class'].includes(m[2])) {
+        const isMethod = m[3] === '(';
+        symbols.push({
+          name: m[2],
+          kind: isMethod ? 'method' : 'field',
+          line: idx + 1,
+        });
+        return;
+      }
+      m = line.match(jsFn) || line.match(pyFn) || line.match(goFn);
+      if (m) {
+        symbols.push({ name: m[1], kind: 'member', line: idx + 1 });
+        return;
+      }
+      m = line.match(heading);
+      if (m) {
+        symbols.push({ name: m[1], kind: 'heading', line: idx + 1 });
       }
     });
-    return symbols.slice(0, 200);
+    return symbols.slice(0, 240);
   };
 
   const toggleMaximize = (panel) => {
@@ -1089,6 +1437,13 @@ const FileBrowser = () => {
   const activeEditor =
     openEditors.find((ed) => ed.path === activeEditorPath) || selectedFile;
   const outlineSymbols = buildOutlineSymbols(activeEditor);
+  const typeName = activeEditor
+    ? parseTypeName(activeEditor.content || '', activeEditor.path)
+    : '';
+  const javadocText =
+    activeEditor && !isImageEditor(activeEditor)
+      ? extractJavadoc(activeEditor.content || '')
+      : null;
   const problemLines = consoleLines.filter((l) => l.t === 'error' || l.t === 'warn');
   const fileCount = fileTree.filter((t) => t.type === 'file').length;
 
@@ -1288,9 +1643,15 @@ const FileBrowser = () => {
               style={isMax('explorer') ? undefined : { width: explorerWidth }}
             >
               <ViewChrome
-                title="Package Explorer"
+                title="Explorer"
                 panel="explorer"
                 onHide={() => { setShowExplorer(false); setMaximized(null); }}
+                tabs={
+                  <button type="button" className="ecl-view-title-tab active ecl-view-tab-with-icon">
+                    <span className="ecl-tab-mini-icon ecl-tab-mini-explorer" />
+                    Explorer
+                  </button>
+                }
               >
                 <div className="ecl-view-toolbar">
                   <button
@@ -1310,7 +1671,10 @@ const FileBrowser = () => {
                     +
                   </button>
                 </div>
-                <div className="ecl-view-content">
+                <div
+                  className="ecl-view-content"
+                  onMouseDown={() => setFocusedPane('explorer')}
+                >
                   {activeProject ? (
                     <>
                       <div
@@ -1327,7 +1691,9 @@ const FileBrowser = () => {
                         <span className="ecl-tree-name">{activeProject.fullName}</span>
                       </div>
                       {expandedFolders.has(activeProject.fullName) &&
-                        renderTree(treeStructure, '', 1)}
+                        (looksLikePackageForest(treeStructure)
+                          ? renderFlatPackages(treeStructure, '', 1)
+                          : renderTree(treeStructure, '', 1))}
                     </>
                   ) : (
                     <div className="ecl-empty-view">
@@ -1402,7 +1768,10 @@ const FileBrowser = () => {
                   </div>
                 </div>
 
-                <div className="ecl-editor-body">
+                <div
+                  className="ecl-editor-body"
+                  onMouseDown={() => setFocusedPane('editor')}
+                >
                   {error && (
                     <div className="ecl-error-banner">
                       <span>{error}</span>
@@ -1414,17 +1783,6 @@ const FileBrowser = () => {
 
                   {activeEditor ? (
                     <>
-                      <div className="ecl-breadcrumb">
-                        <span className="ecl-bc-item">{activeProject?.fullName}</span>
-                        {activeEditor.path.split('/').map((part, i, arr) => (
-                          <React.Fragment key={i}>
-                            <span className="ecl-bc-sep">›</span>
-                            <span className={i === arr.length - 1 ? 'ecl-bc-item current' : 'ecl-bc-item'}>
-                              {part}
-                            </span>
-                          </React.Fragment>
-                        ))}
-                      </div>
                       <div className="ecl-code-scroll">
                         {isImageEditor(activeEditor) ? (
                           <div className="ecl-image-pane">
@@ -1476,30 +1834,11 @@ const FileBrowser = () => {
                             </ReactMarkdown>
                           </div>
                         ) : (
-                          <SyntaxHighlighter
+                          <JdtSourceEditor
+                            content={activeEditor.content || ''}
                             language={getLanguage(activeEditor.path)}
-                            style={oneLight}
-                            showLineNumbers
-                            wrapLines
-                            customStyle={{
-                              margin: 0,
-                              padding: '8px 0',
-                              background: '#ffffff',
-                              fontSize: '12.5px',
-                              lineHeight: '1.45',
-                              minHeight: '100%',
-                            }}
-                            lineNumberStyle={{
-                              minWidth: '3em',
-                              paddingRight: '12px',
-                              color: '#8a8a8a',
-                              background: '#f5f5f5',
-                              borderRight: '1px solid #e0e0e0',
-                              marginRight: '12px',
-                            }}
-                          >
-                            {activeEditor.content}
-                          </SyntaxHighlighter>
+                            cursorLine={cursorPos.line}
+                          />
                         )}
                       </div>
                     </>
@@ -1637,24 +1976,32 @@ const FileBrowser = () => {
                     tabs={
                       <>
                         {[
-                          { id: 'problems', label: `Problems${problemLines.length ? ` (${problemLines.length})` : ''}` },
-                          { id: 'console', label: 'Console' },
-                          { id: 'progress', label: 'Progress' },
-                          { id: 'search', label: 'Search' },
+                          { id: 'problems', label: `Problems${problemLines.length ? ` (${problemLines.length})` : ''}`, icon: 'problems' },
+                          { id: 'javadoc', label: 'Javadoc', icon: 'javadoc' },
+                          { id: 'declaration', label: 'Declaration', icon: 'declaration' },
+                          { id: 'search', label: 'Search', icon: 'search' },
+                          { id: 'console', label: 'Console', icon: 'console' },
                         ].map((tab) => (
                           <button
                             key={tab.id}
                             type="button"
-                            className={`ecl-view-title-tab ${bottomTab === tab.id ? 'active' : ''}`}
-                            onClick={() => setBottomTab(tab.id)}
+                            className={`ecl-view-title-tab ecl-view-tab-with-icon ${bottomTab === tab.id ? 'active' : ''}`}
+                            onClick={() => {
+                              setBottomTab(tab.id);
+                              setFocusedPane('bottom');
+                            }}
                           >
+                            <span className={`ecl-tab-mini-icon ecl-tab-mini-${tab.icon}`} />
                             {tab.label}
                           </button>
                         ))}
                       </>
                     }
                   >
-                    <div className="ecl-bottom-content">
+                    <div
+                      className="ecl-bottom-content"
+                      onMouseDown={() => setFocusedPane('bottom')}
+                    >
                       {bottomTab === 'problems' && (
                         problemLines.length === 0 ? (
                           <div className="ecl-bottom-empty">0 errors, 0 warnings, 0 infos</div>
@@ -1665,6 +2012,37 @@ const FileBrowser = () => {
                             </div>
                           ))
                         )
+                      )}
+                      {bottomTab === 'javadoc' && (
+                        <div className="ecl-javadoc-pane">
+                          {!activeEditor ? (
+                            <div className="ecl-bottom-empty">Select a type to view Javadoc.</div>
+                          ) : javadocText ? (
+                            <pre className="ecl-javadoc-pre">{javadocText}</pre>
+                          ) : (
+                            <div className="ecl-bottom-empty">
+                              Note: This element neither has attached source nor attached Javadoc
+                              and hence no Javadoc could be found.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {bottomTab === 'declaration' && (
+                        <div className="ecl-declaration-pane">
+                          {!activeEditor ? (
+                            <div className="ecl-bottom-empty">No declaration selected.</div>
+                          ) : (
+                            <pre className="ecl-declaration-pre">
+                              {(activeEditor.content || '')
+                                .split('\n')
+                                .slice(
+                                  Math.max(0, (outlineSymbols[0]?.line || 1) - 2),
+                                  (outlineSymbols[0]?.line || 1) + 8
+                                )
+                                .join('\n') || activeEditor.path}
+                            </pre>
+                          )}
+                        </div>
                       )}
                       {bottomTab === 'console' && (
                         consoleLines.length === 0 ? (
@@ -1677,32 +2055,81 @@ const FileBrowser = () => {
                           ))
                         )
                       )}
-                      {bottomTab === 'progress' && (
-                        <div className="ecl-bottom-empty">
-                          {loading ? 'Operation in progress…' : 'No operations to display at this time.'}
-                        </div>
-                      )}
                       {bottomTab === 'search' && (
-                        <div className="ecl-search-pane">
-                          <div className="ecl-search-row">
-                            <label>File name patterns:</label>
-                            <input type="text" className="ecl-field-input" placeholder="*" defaultValue="*" />
+                        !activeEditor ? (
+                          <div className="ecl-bottom-empty">
+                            No search results. Open a resource to see references.
                           </div>
-                          <div className="ecl-search-row">
-                            <label>Containing text:</label>
-                            <input type="text" className="ecl-field-input" placeholder="Search text" />
+                        ) : (
+                          <div className="ecl-search-results">
+                            <div className="ecl-search-header">
+                              '{typeName}' - {Math.max(outlineSymbols.length, 1)} references
+                              in workspace (no JRE)
+                            </div>
+                            <div
+                              className="ecl-tree-item ecl-folder"
+                              style={{ paddingLeft: 8 }}
+                            >
+                              <span className="ecl-tree-twistie open" />
+                              <span className="ecl-tree-icon ecl-pkg-icon" />
+                              <span className="ecl-tree-name">
+                                {activeEditor.path.split('/').slice(0, -1).join('.') ||
+                                  activeProject?.fullName ||
+                                  'src'}
+                                {' '}
+                                <span className="ecl-tree-deco">
+                                  {activeEditor.path.split('/').slice(0, -1).join('/') ||
+                                    'src'}
+                                </span>
+                              </span>
+                            </div>
+                            <div
+                              className={`ecl-tree-item ${
+                                outlineSelection == null ? 'active focused' : ''
+                              }`}
+                              style={{ paddingLeft: 22 }}
+                              onClick={() => {
+                                setOutlineSelection(null);
+                                setFocusedPane('bottom');
+                              }}
+                            >
+                              <span className="ecl-tree-twistie open" />
+                              <span className="ecl-jdt-icon ecl-jdt-c" />
+                              <span className="ecl-tree-name">{typeName}</span>
+                              <span className="ecl-tree-deco">
+                                {fileDecorations(
+                                  fileTree.find((t) => t.path === activeEditor.path) || {},
+                                  activeProject
+                                )}
+                              </span>
+                            </div>
+                            {outlineSymbols
+                              .filter((s) => s.kind !== 'type' && s.kind !== 'iface' && s.kind !== 'heading')
+                              .slice(0, 40)
+                              .map((sym, i) => (
+                                <div
+                                  key={`${sym.line}-${i}`}
+                                  className={`ecl-tree-item ${
+                                    outlineSelection === sym.line ? 'active focused' : ''
+                                  }`}
+                                  style={{ paddingLeft: 44 }}
+                                  onClick={() => {
+                                    setOutlineSelection(sym.line);
+                                    setCursorPos({ line: sym.line, col: 1 });
+                                    setFocusedPane('bottom');
+                                    setStatusMessage(`${activeEditor.path} : ${sym.line}`);
+                                  }}
+                                >
+                                  <span
+                                    className={`ecl-jdt-icon ${
+                                      sym.kind === 'field' ? 'ecl-jdt-f' : 'ecl-jdt-m'
+                                    }`}
+                                  />
+                                  <span className="ecl-tree-name">{sym.name}</span>
+                                </div>
+                              ))}
                           </div>
-                          <button
-                            type="button"
-                            className="ecl-dialog-btn primary"
-                            onClick={() => {
-                              pushConsole('Search completed — 0 matches in workspace.');
-                              setBottomTab('console');
-                            }}
-                          >
-                            Search
-                          </button>
-                        </div>
+                        )
                       )}
                     </div>
                   </ViewChrome>
@@ -1712,17 +2139,23 @@ const FileBrowser = () => {
 
             {!showBottom && !hideForMax('bottom') && (
               <div className="ecl-bottom-trim">
-                {['Problems', 'Console', 'Progress', 'Search'].map((label) => (
+                {[
+                  { id: 'problems', label: 'Problems' },
+                  { id: 'javadoc', label: 'Javadoc' },
+                  { id: 'declaration', label: 'Declaration' },
+                  { id: 'search', label: 'Search' },
+                  { id: 'console', label: 'Console' },
+                ].map((tab) => (
                   <button
-                    key={label}
+                    key={tab.id}
                     type="button"
                     className="ecl-bottom-trim-tab"
                     onClick={() => {
                       setShowBottom(true);
-                      setBottomTab(label.toLowerCase());
+                      setBottomTab(tab.id);
                     }}
                   >
-                    {label}
+                    {tab.label}
                   </button>
                 ))}
               </div>
@@ -1759,44 +2192,65 @@ const FileBrowser = () => {
                     ⊟
                   </button>
                 </div>
-                <div className="ecl-view-content">
+                <div
+                  className="ecl-view-content ecl-outline-content"
+                  onMouseDown={() => setFocusedPane('outline')}
+                >
                   {!activeEditor ? (
                     <div className="ecl-empty-view">
                       <p>An outline is not available.</p>
                       <p className="ecl-muted-note">Open a resource to see its structure.</p>
                     </div>
-                  ) : outlineSymbols.length === 0 ? (
-                    <div className="ecl-empty-view">
-                      <div className="ecl-tree-item active" style={{ paddingLeft: 8 }}>
-                        <span className={`ecl-tree-icon ecl-ft ecl-ft-${getFileIconKind(activeEditor.path)}`} />
-                        <span className="ecl-tree-name">{activeEditor.path.split('/').pop()}</span>
-                      </div>
-                      <p className="ecl-muted-note" style={{ padding: '8px' }}>
-                        No outline symbols detected for this resource type.
-                      </p>
-                    </div>
                   ) : (
                     <>
-                      <div className="ecl-tree-item ecl-project-root" style={{ paddingLeft: 8 }}>
-                        <span className={`ecl-tree-icon ecl-ft ecl-ft-${getFileIconKind(activeEditor.path)}`} />
-                        <span className="ecl-tree-name">{activeEditor.path.split('/').pop()}</span>
+                      <div
+                        className={`ecl-tree-item ecl-project-root ${
+                          outlineSelection == null ? 'active' : ''
+                        } ${focusedPane === 'outline' && outlineSelection == null ? 'focused' : ''}`}
+                        style={{ paddingLeft: 8 }}
+                        onClick={() => {
+                          setOutlineSelection(null);
+                          setFocusedPane('outline');
+                        }}
+                      >
+                        <span className="ecl-jdt-icon ecl-jdt-c" />
+                        <span className="ecl-tree-name">{typeName}</span>
                       </div>
-                      {outlineSymbols.map((sym, i) => (
-                        <div
-                          key={`${sym.line}-${i}`}
-                          className="ecl-tree-item ecl-file"
-                          style={{ paddingLeft: 22 }}
-                          title={`Line ${sym.line}`}
-                          onClick={() => {
-                            setCursorPos({ line: sym.line, col: 1 });
-                            setStatusMessage(`${activeEditor.path} : ${sym.line}`);
-                          }}
-                        >
-                          <span className={`ecl-outline-kind ecl-outline-${sym.kind}`} />
-                          <span className="ecl-tree-name">{sym.name}</span>
-                          <span className="ecl-outline-line">{sym.line}</span>
-                        </div>
-                      ))}
+                      {outlineSymbols.map((sym, i) => {
+                        const icon =
+                          sym.kind === 'type'
+                            ? 'ecl-jdt-c'
+                            : sym.kind === 'iface'
+                            ? 'ecl-jdt-i'
+                            : sym.kind === 'field'
+                            ? 'ecl-jdt-f'
+                            : sym.kind === 'heading'
+                            ? 'ecl-jdt-h'
+                            : 'ecl-jdt-m';
+                        return (
+                          <div
+                            key={`${sym.line}-${i}`}
+                            className={`ecl-tree-item ecl-file ${
+                              outlineSelection === sym.line ? 'active' : ''
+                            } ${
+                              focusedPane === 'outline' && outlineSelection === sym.line
+                                ? 'focused'
+                                : ''
+                            }`}
+                            style={{ paddingLeft: 22 }}
+                            title={`Line ${sym.line}`}
+                            onClick={() => {
+                              setOutlineSelection(sym.line);
+                              setCursorPos({ line: sym.line, col: 1 });
+                              setFocusedPane('outline');
+                              setStatusMessage(`${activeEditor.path} : ${sym.line}`);
+                            }}
+                          >
+                            <span className={`ecl-jdt-icon ${icon}`} />
+                            <span className="ecl-tree-name">{sym.name}</span>
+                          </div>
+                        );
+                      })}
                     </>
                   )}
                 </div>
@@ -1824,8 +2278,8 @@ const FileBrowser = () => {
         </div>
         <div className="ecl-status-right">
           {channelReady && (
-            <span className="ecl-status-item" title="Connected">
-              Connected
+            <span className="ecl-status-item" title="Workspace">
+              Java
             </span>
           )}
           {activeProject && (
