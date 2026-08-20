@@ -41,7 +41,10 @@ const getFileIconKind = (filePath = '') => {
     tsx: 'tsx',
     py: 'py', pyw: 'py',
     java: 'java',
-    class: 'java',
+    class: 'classfile',
+    jar: 'jar',
+    war: 'jar',
+    ear: 'jar',
     kt: 'kt', kts: 'kt',
     go: 'go',
     rs: 'rs',
@@ -1400,7 +1403,7 @@ const FileBrowser = () => {
       if (m) {
         symbols.push({
           name: m[2],
-          kind: m[1] === 'interface' ? 'iface' : 'type',
+          kind: m[1] === 'interface' ? 'iface' : m[1] === 'enum' ? 'enum' : 'type',
           detail: m[1],
           line: idx + 1,
         });
@@ -1659,7 +1662,7 @@ const FileBrowser = () => {
                 tabs={
                   <button type="button" className="ecl-view-title-tab active ecl-view-tab-with-icon">
                     <span className="ecl-tab-mini-icon ecl-tab-mini-explorer" />
-                    Explorer
+                    Package Explorer
                   </button>
                 }
               >
@@ -2200,6 +2203,12 @@ const FileBrowser = () => {
                 title="Outline"
                 panel="outline"
                 onHide={() => { setShowOutline(false); setMaximized(null); }}
+                tabs={
+                  <button type="button" className="ecl-view-title-tab active ecl-view-tab-with-icon">
+                    <span className="ecl-tab-mini-icon ecl-tab-mini-declaration" />
+                    Outline
+                  </button>
+                }
               >
                 <div className="ecl-view-toolbar">
                   <button
@@ -2241,6 +2250,8 @@ const FileBrowser = () => {
                             ? 'ecl-jdt-c'
                             : sym.kind === 'iface'
                             ? 'ecl-jdt-i'
+                            : sym.kind === 'enum'
+                            ? 'ecl-jdt-e'
                             : sym.kind === 'field'
                             ? 'ecl-jdt-f'
                             : sym.kind === 'heading'

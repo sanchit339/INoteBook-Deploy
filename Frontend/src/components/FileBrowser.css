@@ -213,25 +213,25 @@
   width: 16px;
   height: 16px;
   display: block;
-  background-size: contain;
+  background-size: 16px 16px;
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .ecl-tb-open {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%232c6eb5' d='M1 3h5l1 1h8v9H1V3z'/%3E%3Cpath fill='%23f0c040' d='M2 5h12v7H2z'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/fldr_obj@2x.png");
 }
 
 .ecl-tb-refresh {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23333' stroke-width='1.5' d='M13 8a5 5 0 1 1-1.5-3.5'/%3E%3Cpath fill='%23333' d='M13 2v4h-4l4-4z'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/refresh_nav@2x.png");
 }
 
 .ecl-tb-explorer {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='2' width='6' height='12' fill='none' stroke='%232c6eb5' stroke-width='1.2'/%3E%3Crect x='9' y='2' width='6' height='12' fill='none' stroke='%23666' stroke-width='1.2'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/eview_package@2x.png");
 }
 
 .ecl-tb-outline {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%232c6eb5' stroke-width='1.2' d='M3 3h10M5 7h8M5 11h8'/%3E%3Ccircle cx='3.5' cy='7' r='1' fill='%232c6eb5'/%3E%3Ccircle cx='3.5' cy='11' r='1' fill='%232c6eb5'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/eview_class_hi@2x.png");
 }
 
 .ecl-tb-console {
@@ -349,10 +349,10 @@
 }
 
 .ecl-chip-icon {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%232c6eb5' d='M1 2h4l1 1h5v7H1z'/%3E%3C/svg%3E") center/contain no-repeat;
+  background: url("/jdt-icons/newjprj_wiz@2x.png") center/16px 16px no-repeat;
 }
 
 .ecl-chip-name {
@@ -846,10 +846,10 @@
 }
 
 .ecl-tree-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  background-size: contain;
+  background-size: 16px 16px;
   background-repeat: no-repeat;
   background-position: center;
   /* icons must stay square — never stretch */
@@ -859,461 +859,146 @@
 }
 
 .ecl-project-icon {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath fill='%232c6eb5' d='M1 2h5l1 1h6v9H1z'/%3E%3Cpath fill='%23f5d76e' d='M2 5h10v6H2z'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/newjprj_wiz@2x.png");
+  background-size: 16px 16px;
 }
 
-.ecl-folder-closed {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23e8c15a' stroke='%23b0892e' stroke-width='0.6' d='M1.5 3.5h5l1.2 1.5H14.5v8.5H1.5z'/%3E%3Cpath fill='%23f3d57a' d='M2 6h12v7H2z'/%3E%3C/svg%3E");
-}
-
+.ecl-folder-closed,
 .ecl-folder-open {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f0c86a' stroke='%23b0892e' stroke-width='0.6' d='M1.5 3.5h5l1.2 1.5H14.5v2H3.2L1.5 13.5z'/%3E%3Cpath fill='%23e0b44a' stroke='%23b0892e' stroke-width='0.5' d='M2.2 7.2h12.2l-1.8 6.3H1.5z'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/fldr_obj@2x.png");
+  background-size: 16px 16px;
 }
 
-/* Eclipse JDT package (tan folder + paper) */
+/* Eclipse JDT package (official package_obj) */
 .ecl-pkg-icon {
   width: 16px;
   height: 16px;
   min-width: 16px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23c9a24c' stroke='%23907530' stroke-width='0.5' d='M1.5 4h5.2l1.1 1.4H14.5v8.1H1.5z'/%3E%3Cpath fill='%23e6c56a' d='M2.2 6.4h11.6v6.4H2.2z'/%3E%3Cpath fill='%23fff' stroke='%239a9a9a' stroke-width='0.5' d='M9.2 7.1h4.1v5.1H9.2z'/%3E%3Cpath fill='%23eee' d='M9.2 7.1h2.2l1.9 1.7V7.1z'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/package_obj@2x.png");
+  background-size: 16px 16px;
 }
 
 .ecl-src-folder {
   width: 16px;
   height: 16px;
   min-width: 16px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23d4b45a' stroke='%23907530' stroke-width='0.5' d='M1.5 3.5h5l1.2 1.5H14.5v8.5H1.5z'/%3E%3Cpath fill='%23f0d070' d='M2 6h12v7H2z'/%3E%3Ccircle cx='11.2' cy='11' r='3.1' fill='%232e7d32'/%3E%3Ctext x='11.2' y='12.3' font-family='Arial' font-size='4.6' font-weight='bold' fill='%23fff' text-anchor='middle'%3EJ%3C/text%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/packagefolder_obj@2x.png");
+  background-size: 16px 16px;
 }
 
-/* Generic blank document (fallback before typed icons) */
+/* Generic blank document (official file_obj) */
 .ecl-file-icon {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath fill='%23fff' stroke='%23888' d='M3 1h5l3 3v9H3z'/%3E%3Cpath fill='%23ddd' d='M8 1v3h3'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/file_obj@2x.png");
+  background-size: 16px 16px;
   margin-left: 12px;
 }
 
-/* ----- File-type logos (Package Explorer + editor tabs) ----- */
+/* ----- Official Eclipse JDT / JEE 16×16 icons (Package Explorer + editor tabs) ----- */
 .ecl-ft {
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
-  min-height: 14px;
-  max-width: 14px;
-  max-height: 14px;
-  flex: 0 0 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-  font-size: 7px;
-  font-weight: 700;
-  font-family: Tahoma, 'Segoe UI', sans-serif;
-  letter-spacing: -0.3px;
-  color: #fff;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 16px;
+  max-height: 16px;
+  flex: 0 0 16px;
+  display: inline-block;
+  border-radius: 0;
+  font-size: 0;
+  color: transparent;
   line-height: 1 !important;
-  background-color: #8a8a8a;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
   margin-left: 0;
   position: relative;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   transform: none !important;
-  font-stretch: normal;
 }
 
 .ecl-tab-file-icon.ecl-ft {
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
-  min-height: 14px;
-  max-width: 14px;
-  max-height: 14px;
-  flex: 0 0 14px;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  max-width: 16px;
+  max-height: 16px;
+  flex: 0 0 16px;
   margin-left: 0;
-  font-size: 6px;
-  border-radius: 1px;
+  border-radius: 0;
 }
 
 .ecl-ft::after {
-  content: '';
-  display: block;
-  font-size: inherit;
-  font-weight: inherit;
-  color: inherit;
-  line-height: 1 !important;
-  transform: none;
-  font-stretch: normal;
+  content: none !important;
+  display: none !important;
 }
 
-/* Language / format colors (Eclipse-style badges) */
-.ecl-ft-js {
-  background: #f7df1e;
-  color: #323330;
+/* Java compilation unit — official JDT jcu_obj (white page + J) */
+.ecl-ft-java,
+.ecl-ft-kt {
+  background-image: url("/jdt-icons/jcu_obj@2x.png") !important;
+  background-color: transparent !important;
 }
 
-.ecl-ft-js::after {
-  content: 'JS';
+.ecl-ft-classfile {
+  background-image: url("/jdt-icons/classf_obj@2x.png") !important;
+  background-color: transparent !important;
 }
 
-.ecl-ft-jsx {
-  background: #61dafb;
-  color: #20232a;
+.ecl-ft-jar {
+  background-image: url("/jdt-icons/jar_obj@2x.png") !important;
+  background-color: transparent !important;
 }
 
-.ecl-ft-jsx::after {
-  content: 'JX';
-}
-
-.ecl-ft-ts {
-  background: #3178c6;
-}
-
-.ecl-ft-ts::after {
-  content: 'TS';
-}
-
-.ecl-ft-tsx {
-  background: #3178c6;
-}
-
-.ecl-ft-tsx::after {
-  content: 'TX';
-}
-
-.ecl-ft-py {
-  background: #3776ab;
-}
-
-.ecl-ft-py::after {
-  content: 'Py';
-}
-
-.ecl-ft-java {
-  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 1.5h7.2L14 5.2V14.5H3z' fill='%23ffffff' stroke='%2378909c' stroke-width='0.75'/%3E%3Cpath d='M10.2 1.5v3.7H14' fill='%23dbe3e8' stroke='%2378909c' stroke-width='0.75'/%3E%3Ctext x='7.4' y='12.4' font-family='Georgia,Times,serif' font-size='8.2' font-weight='700' font-style='italic' fill='%231a56b0' text-anchor='middle'%3EJ%3C/text%3E%3C/svg%3E") center/contain no-repeat !important;
+/* All other files — official JDT file_obj (blank document) */
+.ecl-ft-js,
+.ecl-ft-jsx,
+.ecl-ft-ts,
+.ecl-ft-tsx,
+.ecl-ft-py,
+.ecl-ft-go,
+.ecl-ft-rs,
+.ecl-ft-rb,
+.ecl-ft-php,
+.ecl-ft-cs,
+.ecl-ft-cpp,
+.ecl-ft-c,
+.ecl-ft-h,
+.ecl-ft-hpp,
+.ecl-ft-swift,
+.ecl-ft-json,
+.ecl-ft-xml,
+.ecl-ft-html,
+.ecl-ft-css,
+.ecl-ft-scss,
+.ecl-ft-md,
+.ecl-ft-yml,
+.ecl-ft-sh,
+.ecl-ft-sql,
+.ecl-ft-svg,
+.ecl-ft-image,
+.ecl-ft-pdf,
+.ecl-ft-txt,
+.ecl-ft-props,
+.ecl-ft-toml,
+.ecl-ft-lock,
+.ecl-ft-vue,
+.ecl-ft-svelte,
+.ecl-ft-docker,
+.ecl-ft-make,
+.ecl-ft-npm,
+.ecl-ft-tsconfig,
+.ecl-ft-git,
+.ecl-ft-build,
+.ecl-ft-env,
+.ecl-ft-license,
+.ecl-ft-file {
+  background-image: url("/jdt-icons/file_obj@2x.png") !important;
   background-color: transparent !important;
   border: none !important;
-}
-
-.ecl-ft-java::after {
-  content: '' !important;
-}
-
-.ecl-ft-kt {
-  background: #a97bff;
-}
-
-.ecl-ft-kt::after {
-  content: 'Kt';
-}
-
-.ecl-ft-go {
-  background: #00add8;
-}
-
-.ecl-ft-go::after {
-  content: 'Go';
-}
-
-.ecl-ft-rs {
-  background: #dea584;
-  color: #3b2e2a;
-}
-
-.ecl-ft-rs::after {
-  content: 'Rs';
-}
-
-.ecl-ft-rb {
-  background: #cc342d;
-}
-
-.ecl-ft-rb::after {
-  content: 'Rb';
-}
-
-.ecl-ft-php {
-  background: #777bb4;
-}
-
-.ecl-ft-php::after {
-  content: 'P';
-}
-
-.ecl-ft-cs {
-  background: #178600;
-}
-
-.ecl-ft-cs::after {
-  content: 'C#';
-  font-size: 6px;
-}
-
-.ecl-ft-cpp {
-  background: #f34b7d;
-}
-
-.ecl-ft-cpp::after {
-  content: 'C+';
-}
-
-.ecl-ft-c {
-  background: #555555;
-}
-
-.ecl-ft-c::after {
-  content: 'C';
-}
-
-.ecl-ft-h {
-  background: #a8b9cc;
-  color: #1e2a36;
-}
-
-.ecl-ft-h::after {
-  content: 'H';
-}
-
-.ecl-ft-hpp {
-  background: #f34b7d;
-}
-
-.ecl-ft-hpp::after {
-  content: 'H+';
-}
-
-.ecl-ft-swift {
-  background: #f05138;
-}
-
-.ecl-ft-swift::after {
-  content: 'Sw';
-}
-
-.ecl-ft-json {
-  background: #cbcb41;
-  color: #333;
-}
-
-.ecl-ft-json::after {
-  content: '{}';
-}
-
-.ecl-ft-xml {
-  background: #e37933;
-}
-
-.ecl-ft-xml::after {
-  content: '<>';
-}
-
-.ecl-ft-html {
-  background: #e34c26;
-}
-
-.ecl-ft-html::after {
-  content: '<>';
-}
-
-.ecl-ft-css {
-  background: #563d7c;
-}
-
-.ecl-ft-css::after {
-  content: '#';
-}
-
-.ecl-ft-scss {
-  background: #c6538c;
-}
-
-.ecl-ft-scss::after {
-  content: 'S#';
-}
-
-.ecl-ft-md {
-  background: #083fa1;
-}
-
-.ecl-ft-md::after {
-  content: 'M↓';
-  font-size: 6px;
-}
-
-.ecl-ft-yml {
-  background: #cb171e;
-}
-
-.ecl-ft-yml::after {
-  content: 'Y';
-}
-
-.ecl-ft-sh {
-  background: #89e051;
-  color: #1a3310;
-}
-
-.ecl-ft-sh::after {
-  content: '$>';
-}
-
-.ecl-ft-sql {
-  background: #e38c00;
-}
-
-.ecl-ft-sql::after {
-  content: 'Q';
-}
-
-.ecl-ft-svg {
-  background: #ffb13b;
-  color: #333;
-}
-
-.ecl-ft-svg::after {
-  content: '◇';
-}
-
-.ecl-ft-image {
-  background: #a074c4;
-}
-
-.ecl-ft-image::after {
-  content: '▣';
-}
-
-.ecl-ft-pdf {
-  background: #f40f02;
-}
-
-.ecl-ft-pdf::after {
-  content: 'P';
-}
-
-.ecl-ft-txt {
-  background: #6a737d;
-}
-
-.ecl-ft-txt::after {
-  content: 'T';
-}
-
-.ecl-ft-props {
-  background: #6d8086;
-}
-
-.ecl-ft-props::after {
-  content: '··';
-}
-
-.ecl-ft-toml {
-  background: #9c4221;
-}
-
-.ecl-ft-toml::after {
-  content: 'Tm';
-}
-
-.ecl-ft-lock {
-  background: #c0c0c0;
-  color: #333;
-}
-
-.ecl-ft-lock::after {
-  content: '🔒';
-  font-size: 8px;
-}
-
-.ecl-ft-vue {
-  background: #41b883;
-}
-
-.ecl-ft-vue::after {
-  content: 'V';
-}
-
-.ecl-ft-svelte {
-  background: #ff3e00;
-}
-
-.ecl-ft-svelte::after {
-  content: 'S';
-}
-
-.ecl-ft-docker {
-  background: #2496ed;
-}
-
-.ecl-ft-docker::after {
-  content: 'Dk';
-}
-
-.ecl-ft-make {
-  background: #427819;
-}
-
-.ecl-ft-make::after {
-  content: 'Mk';
-}
-
-.ecl-ft-npm {
-  background: #cb3837;
-}
-
-.ecl-ft-npm::after {
-  content: 'N';
-}
-
-.ecl-ft-tsconfig {
-  background: #3178c6;
-}
-
-.ecl-ft-tsconfig::after {
-  content: 'TS';
-}
-
-.ecl-ft-git {
-  background: #f05032;
-}
-
-.ecl-ft-git::after {
-  content: 'G';
-}
-
-.ecl-ft-build {
-  background: #02303a;
-}
-
-.ecl-ft-build::after {
-  content: '⚙';
-  font-size: 8px;
-}
-
-.ecl-ft-env {
-  background: #ecd53f;
-  color: #333;
-}
-
-.ecl-ft-env::after {
-  content: 'E';
-}
-
-.ecl-ft-license {
-  background: #d1b344;
-  color: #333;
-}
-
-.ecl-ft-license::after {
-  content: '©';
-}
-
-.ecl-ft-file {
-  background: #f5f5f5;
-  color: #666;
-  border: 1px solid #bbb;
-}
-
-.ecl-ft-file::after {
-  content: '▾';
-  font-size: 8px;
-  transform: rotate(-90deg);
+  color: transparent;
 }
 
 .ecl-tree-name {
@@ -1436,10 +1121,10 @@
 }
 
 .ecl-tab-file-icon:not(.ecl-ft) {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' stroke='%23888' d='M2 1h5l3 3v7H2z'/%3E%3C/svg%3E") center/contain no-repeat;
+  background: url("/jdt-icons/file_obj@2x.png") center/16px 16px no-repeat;
 }
 
 .ecl-tab-label {
@@ -2296,35 +1981,39 @@
   }
 }
 
-/* JDT member icons (green C / F / M) */
+/* JDT member icons — official org.eclipse.jdt.ui obj16 */
 .ecl-jdt-icon {
   width: 16px;
   height: 16px;
   min-width: 16px;
   flex-shrink: 0;
-  background-size: contain;
+  background-size: 16px 16px;
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .ecl-jdt-c {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.2' fill='%232e7d32'/%3E%3Ctext x='8' y='11.2' font-family='Arial,sans-serif' font-size='8.5' font-weight='700' fill='%23fff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/class_obj@2x.png");
 }
 
 .ecl-jdt-i {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.2' fill='%232e7d32'/%3E%3Ctext x='8' y='11.2' font-family='Arial,sans-serif' font-size='8.5' font-weight='700' fill='%23fff' text-anchor='middle'%3EI%3C/text%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/int_obj@2x.png");
+}
+
+.ecl-jdt-e {
+  background-image: url("/jdt-icons/enum_obj@2x.png");
 }
 
 .ecl-jdt-f {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.2' fill='%232e7d32'/%3E%3Ctext x='8' y='11.2' font-family='Arial,sans-serif' font-size='8.5' font-weight='700' fill='%23fff' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/field_public_obj@2x.png");
 }
 
 .ecl-jdt-m {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.2' fill='%232e7d32'/%3E%3Ctext x='8' y='11.2' font-family='Arial,sans-serif' font-size='8' font-weight='700' fill='%23fff' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/methpub_obj@2x.png");
 }
 
 .ecl-jdt-h {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='6.2' fill='%23083fa1'/%3E%3Ctext x='8' y='11.2' font-family='Arial,sans-serif' font-size='8' font-weight='700' fill='%23fff' text-anchor='middle'%3EH%3C/text%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/file_obj@2x.png");
 }
 
 .ecl-view-tab-with-icon {
@@ -2334,32 +2023,32 @@
 }
 
 .ecl-tab-mini-icon {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  background-size: contain;
+  background-size: 16px 16px;
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .ecl-tab-mini-explorer {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%23e8c15a' d='M1 2h4l1 1h5v7H1z'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/eview_package@2x.png");
 }
 
 .ecl-tab-mini-problems {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Ccircle cx='6' cy='6' r='5' fill='%23c0392b'/%3E%3Cpath stroke='%23fff' stroke-width='1.4' d='M4 4l4 4M8 4L4 8'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/problems_view@2x.png");
 }
 
 .ecl-tab-mini-javadoc {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Crect x='1.5' y='1.5' width='9' height='9' rx='1' fill='%232e7d32'/%3E%3Ctext x='6' y='9' font-family='Arial' font-size='7' font-weight='700' fill='%23fff' text-anchor='middle'%3E@%3C/text%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/eview_javadoc@2x.png");
 }
 
 .ecl-tab-mini-declaration {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%232c6eb5' d='M2 2h8v8H2z'/%3E%3Cpath fill='%23fff' d='M4 4h4v1H4zm0 2h4v1H4zm0 2h3v1H4z'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/eview_class_hi@2x.png");
 }
 
 .ecl-tab-mini-search {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Ccircle cx='5' cy='5' r='3.2' fill='none' stroke='%23333' stroke-width='1.3'/%3E%3Cpath stroke='%23333' stroke-width='1.4' d='M7.4 7.4L10 10'/%3E%3C/svg%3E");
+  background-image: url("/jdt-icons/searchres@2x.png");
 }
 
 .ecl-tab-mini-console {
@@ -2420,8 +2109,8 @@
   max-width: 16px;
   max-height: 16px;
   flex: 0 0 16px;
-  font-size: 7.5px;
-  border-radius: 1px;
+  font-size: 0;
+  border-radius: 0;
 }
 
 .ecl-tree-item .ecl-tree-icon {
