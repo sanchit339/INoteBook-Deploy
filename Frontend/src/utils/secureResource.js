@@ -270,7 +270,7 @@ const unwrapResponse = async (res, raw) => {
 /**
  * Invoke an opaque encrypted resource operation.
  * Automatically re-handshakes once if the server recycled after idle.
- * @param {'project'|'tree'|'file'} op
+ * @param {'project'|'tree'|'file'|'image'} op
  * @param {object} args
  */
 export const secureInvoke = async (op, args = {}) => {

@@ -58,7 +58,7 @@ const getFileIconKind = (filePath = '') => {
     yml: 'yml', yaml: 'yml',
     sh: 'sh', bash: 'sh', zsh: 'sh', bat: 'sh', cmd: 'sh', ps1: 'sh',
     sql: 'sql',
-    svg: 'svg', png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image', ico: 'image', bmp: 'image',
+    svg: 'svg', png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image', ico: 'image', bmp: 'image', avif: 'image', tif: 'image', tiff: 'image',
     pdf: 'pdf',
     txt: 'txt', log: 'txt',
     properties: 'props', conf: 'props', cfg: 'props', ini: 'props',
@@ -69,6 +69,198 @@ const getFileIconKind = (filePath = '') => {
     svelte: 'svelte',
   };
   return map[ext] || 'file';
+};
+
+const IMAGE_EXTS = new Set([
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp', 'avif', 'tif', 'tiff',
+]);
+
+const MIME_BY_EXT = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  ico: 'image/x-icon',
+  bmp: 'image/bmp',
+  avif: 'image/avif',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
+};
+
+const GITHUB_CDN_HOSTS = new Set([
+  'raw.githubusercontent.com',
+  'user-images.githubusercontent.com',
+  'objects.githubusercontent.com',
+  'media.githubusercontent.com',
+  'camo.githubusercontent.com',
+  'github.com',
+]);
+
+const getPathExt = (filePath = '') => {
+  const base = String(filePath).split('/').pop() || '';
+  const i = base.lastIndexOf('.');
+  if (i < 0) return '';
+  return base.slice(i + 1).toLowerCase();
+};
+
+const isImagePath = (filePath = '') => IMAGE_EXTS.has(getPathExt(filePath));
+
+const mimeFromPath = (filePath = '') => MIME_BY_EXT[getPathExt(filePath)] || 'application/octet-stream';
+
+const isImageEditor = (file) =>
+  Boolean(file && (file.encoding === 'base64' || isImagePath(file.path)));
+
+const b64ToBytes = (b64) => {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out;
+};
+
+const base64ToBlobUrl = (b64, mime) => {
+  const bytes = b64ToBytes(b64);
+  const blob = new Blob([bytes], { type: mime || 'application/octet-stream' });
+  return URL.createObjectURL(blob);
+};
+
+const revokeBlobUrl = (url) => {
+  if (url && String(url).startsWith('blob:')) {
+    try {
+      URL.revokeObjectURL(url);
+    } catch (_) {
+      // ignore
+    }
+  }
+};
+
+const posixJoin = (dir, rel) => {
+  const baseParts = rel.startsWith('/') ? [] : (dir ? dir.split('/') : []);
+  const parts = [...baseParts];
+  const trimmed = rel.replace(/\\/g, '/').replace(/^\//, '');
+  for (const p of trimmed.split('/')) {
+    if (!p || p === '.') continue;
+    if (p === '..') {
+      if (parts.length) parts.pop();
+      continue;
+    }
+    parts.push(p);
+  }
+  return parts.join('/');
+};
+
+const imageCacheKey = (owner, name, branch, path) =>
+  `${owner}/${name}@${branch}:${path}`;
+
+/**
+ * Decide how a markdown <img src> should be loaded.
+ * Repo-relative and GitHub-hosted URLs go through the encrypted proxy.
+ * Other http(s) hosts are left as-is (no open proxy).
+ */
+const resolveMarkdownImage = (src, mdPath, project) => {
+  if (!src) return null;
+  const trimmed = String(src).trim();
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
+    return { kind: 'passthrough', src: trimmed };
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    let u;
+    try {
+      u = new URL(trimmed);
+    } catch (_) {
+      return { kind: 'external', src: trimmed };
+    }
+    const host = u.hostname.toLowerCase();
+    if (host === 'raw.githubusercontent.com') {
+      const parts = u.pathname.replace(/^\//, '').split('/');
+      if (parts.length >= 4) {
+        return {
+          kind: 'repo',
+          owner: parts[0],
+          name: parts[1],
+          branch: parts[2],
+          path: parts.slice(3).join('/'),
+        };
+      }
+    }
+    if (host === 'github.com') {
+      const m = u.pathname.match(/^\/([^/]+)\/([^/]+)\/(blob|raw)\/([^/]+)\/(.+)$/);
+      if (m) {
+        return { kind: 'repo', owner: m[1], name: m[2], branch: m[4], path: m[5] };
+      }
+    }
+    if (GITHUB_CDN_HOSTS.has(host) && u.protocol === 'https:') {
+      return { kind: 'cdn', url: trimmed };
+    }
+    return { kind: 'external', src: trimmed };
+  }
+
+  if (!project) return null;
+  const mdDir = (mdPath || '').split('/').slice(0, -1).join('/');
+  const rel = trimmed.split('#')[0].split('?')[0];
+  const path = posixJoin(rel.startsWith('/') ? '' : mdDir, rel);
+  if (!path) return null;
+  return {
+    kind: 'repo',
+    owner: project.owner,
+    name: project.name || project.repo,
+    branch: project.branch,
+    path,
+  };
+};
+
+const MarkdownImg = ({ src, alt, mdPath, project, loadProxiedImage }) => {
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [status, setStatus] = useState('loading');
+
+  const projectKey = project
+    ? `${project.owner}/${project.name || project.repo}@${project.branch}`
+    : '';
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolved = resolveMarkdownImage(src, mdPath, project);
+
+    if (!resolved) {
+      setStatus('error');
+      setBlobUrl(null);
+      return undefined;
+    }
+    if (resolved.kind === 'passthrough' || resolved.kind === 'external') {
+      setBlobUrl(resolved.src);
+      setStatus(resolved.kind === 'external' ? 'external' : 'done');
+      return undefined;
+    }
+
+    setStatus('loading');
+    loadProxiedImage(resolved)
+      .then((url) => {
+        if (!cancelled) {
+          setBlobUrl(url);
+          setStatus('done');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBlobUrl(null);
+          setStatus('error');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [src, mdPath, projectKey, loadProxiedImage, project]);
+
+  if (status === 'loading') {
+    return <span className="ecl-md-img-ph">Loading image…</span>;
+  }
+  if (status === 'error' || !blobUrl) {
+    return <span className="ecl-md-img-ph error">{alt || 'Image unavailable'}</span>;
+  }
+  return <img src={blobUrl} alt={alt || ''} />;
 };
 
 const buildWorkbenchTitle = (activeEditor, activeProject) => {
@@ -203,6 +395,63 @@ const FileBrowser = () => {
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const dialogInputRef = useRef(null);
   const menuBarRef = useRef(null);
+  const blobCacheRef = useRef(new Map()); // key -> { blobUrl, mime }
+
+  const revokeAllBlobs = useCallback(() => {
+    blobCacheRef.current.forEach((entry) => {
+      revokeBlobUrl(entry?.blobUrl);
+    });
+    blobCacheRef.current.clear();
+  }, []);
+
+  const revokeProjectBlobs = useCallback((project) => {
+    if (!project) return;
+    const owner = project.owner;
+    const name = project.name || project.repo;
+    const prefix = `${owner}/${name}@`;
+    Array.from(blobCacheRef.current.entries()).forEach(([key, entry]) => {
+      if (key.startsWith(prefix)) {
+        revokeBlobUrl(entry?.blobUrl);
+        blobCacheRef.current.delete(key);
+      }
+    });
+  }, []);
+
+  const loadProxiedImage = useCallback(async (resolved) => {
+    if (resolved.kind === 'repo') {
+      const key = imageCacheKey(
+        resolved.owner,
+        resolved.name,
+        resolved.branch,
+        resolved.path
+      );
+      const hit = blobCacheRef.current.get(key);
+      if (hit?.blobUrl) return hit.blobUrl;
+      const data = await secureInvoke('image', {
+        owner: resolved.owner,
+        name: resolved.name,
+        branch: resolved.branch,
+        path: resolved.path,
+      });
+      if (!data?.content) throw new Error('Image unavailable');
+      const mime = data.mime || mimeFromPath(resolved.path);
+      const blobUrl = base64ToBlobUrl(data.content, mime);
+      blobCacheRef.current.set(key, { blobUrl, mime });
+      return blobUrl;
+    }
+    if (resolved.kind === 'cdn') {
+      const key = `url:${resolved.url}`;
+      const hit = blobCacheRef.current.get(key);
+      if (hit?.blobUrl) return hit.blobUrl;
+      const data = await secureInvoke('image', { url: resolved.url });
+      if (!data?.content) throw new Error('Image unavailable');
+      const mime = data.mime || 'application/octet-stream';
+      const blobUrl = base64ToBlobUrl(data.content, mime);
+      blobCacheRef.current.set(key, { blobUrl, mime });
+      return blobUrl;
+    }
+    throw new Error('Image unavailable');
+  }, []);
 
   const pushConsole = useCallback((message, t = 'info') => {
     setConsoleLines((prev) => [
@@ -213,6 +462,7 @@ const FileBrowser = () => {
 
   /** Wipe RAM state + browser storage + crypto session (tab close / leave route). */
   const wipeSession = useCallback(() => {
+    revokeAllBlobs();
     setProjects([]);
     setActiveProjectIndex(null);
     setProjectInput('');
@@ -227,7 +477,7 @@ const FileBrowser = () => {
     purgeSecureSession();
     scrubLegacyStorage();
     purgeWorkbenchBrowserStorage();
-  }, []);
+  }, [revokeAllBlobs]);
 
   useEffect(() => {
     let cancelled = false;
@@ -486,6 +736,7 @@ const FileBrowser = () => {
   const removeProject = async (index, e) => {
     if (e) e.stopPropagation();
     const removed = projects[index];
+    revokeProjectBlobs(removed);
     const next = projects.filter((_, i) => i !== index);
     setProjects(next);
 
@@ -521,13 +772,39 @@ const FileBrowser = () => {
     setStatusMessage(`Opening ${filePath}…`);
 
     try {
-      const data = await secureInvoke('file', {
-        owner,
-        name: projectName,
-        branch,
-        path: filePath,
-      });
-      const fileObj = { path: filePath, content: data.content };
+      let fileObj;
+      if (isImagePath(filePath)) {
+        const key = imageCacheKey(owner, projectName, branch, filePath);
+        const cached = blobCacheRef.current.get(key);
+        if (cached?.blobUrl) {
+          fileObj = {
+            path: filePath,
+            encoding: 'base64',
+            mime: cached.mime || mimeFromPath(filePath),
+            blobUrl: cached.blobUrl,
+          };
+        } else {
+          const data = await secureInvoke('image', {
+            owner,
+            name: projectName,
+            branch,
+            path: filePath,
+          });
+          if (!data?.content) throw new Error('Image unavailable');
+          const mime = data.mime || mimeFromPath(filePath);
+          const blobUrl = base64ToBlobUrl(data.content, mime);
+          blobCacheRef.current.set(key, { blobUrl, mime });
+          fileObj = { path: filePath, encoding: 'base64', mime, blobUrl };
+        }
+      } else {
+        const data = await secureInvoke('file', {
+          owner,
+          name: projectName,
+          branch,
+          path: filePath,
+        });
+        fileObj = { path: filePath, content: data.content };
+      }
       setSelectedFile(fileObj);
       setActiveEditorPath(filePath);
       setOpenEditors((prev) => {
@@ -780,7 +1057,7 @@ const FileBrowser = () => {
   }, [explorerWidth, outlineWidth, bottomHeight]);
 
   const buildOutlineSymbols = (file) => {
-    if (!file?.content) return [];
+    if (!file?.content || typeof file.content !== 'string' || isImageEditor(file)) return [];
     const lines = file.content.split('\n');
     const symbols = [];
     const patterns = [
@@ -1149,7 +1426,18 @@ const FileBrowser = () => {
                         ))}
                       </div>
                       <div className="ecl-code-scroll">
-                        {activeEditor.path.toLowerCase().endsWith('.md') ? (
+                        {isImageEditor(activeEditor) ? (
+                          <div className="ecl-image-pane">
+                            {activeEditor.blobUrl ? (
+                              <img
+                                src={activeEditor.blobUrl}
+                                alt={activeEditor.path.split('/').pop()}
+                              />
+                            ) : (
+                              <p className="ecl-muted-note">Image unavailable</p>
+                            )}
+                          </div>
+                        ) : activeEditor.path.toLowerCase().endsWith('.md') ? (
                           <div className="ecl-markdown">
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
@@ -1169,6 +1457,17 @@ const FileBrowser = () => {
                                     <code className={className} {...props}>
                                       {children}
                                     </code>
+                                  );
+                                },
+                                img({ src, alt }) {
+                                  return (
+                                    <MarkdownImg
+                                      src={src}
+                                      alt={alt}
+                                      mdPath={activeEditor.path}
+                                      project={activeProject}
+                                      loadProxiedImage={loadProxiedImage}
+                                    />
                                   );
                                 },
                               }}
@@ -1534,7 +1833,7 @@ const FileBrowser = () => {
               {fileCount} files · {activeProject.branch}
             </span>
           )}
-          {activeEditor && (
+          {activeEditor && !isImageEditor(activeEditor) && (
             <span className="ecl-status-item">
               Ln {cursorPos.line}, Col {cursorPos.col}
             </span>
@@ -1542,7 +1841,11 @@ const FileBrowser = () => {
           <span className="ecl-status-item">Smart Insert</span>
           <span className="ecl-status-item">UTF-8</span>
           <span className="ecl-status-item">
-            {activeEditor ? getLanguage(activeEditor.path).toUpperCase() : 'Text'}
+            {activeEditor
+              ? isImageEditor(activeEditor)
+                ? (activeEditor.mime || 'image').replace(/^image\//, '').toUpperCase()
+                : getLanguage(activeEditor.path).toUpperCase()
+              : 'Text'}
           </span>
         </div>
       </div>

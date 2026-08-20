@@ -640,9 +640,17 @@
   margin-left: 2px;
 }
 
-.ecl-outline-member { background: #2c6eb5; }
-.ecl-outline-type { background: #b07219; }
-.ecl-outline-heading { background: #083fa1; }
+.ecl-outline-member {
+  background: #2c6eb5;
+}
+
+.ecl-outline-type {
+  background: #b07219;
+}
+
+.ecl-outline-heading {
+  background: #083fa1;
+}
 
 .ecl-outline-line {
   margin-left: auto;
@@ -700,9 +708,9 @@
   flex-shrink: 0;
 }
 
-.ecl-view-chrome > .ecl-view-toolbar + .ecl-view-content,
-.ecl-view-chrome > .ecl-view-content,
-.ecl-view-chrome > .ecl-bottom-content {
+.ecl-view-chrome>.ecl-view-toolbar+.ecl-view-content,
+.ecl-view-chrome>.ecl-view-content,
+.ecl-view-chrome>.ecl-bottom-content {
   flex: 1;
   min-height: 0;
 }
@@ -881,94 +889,376 @@
 }
 
 /* Language / format colors (Eclipse-style badges) */
-.ecl-ft-js { background: #f7df1e; color: #323330; }
-.ecl-ft-js::after { content: 'JS'; }
-.ecl-ft-jsx { background: #61dafb; color: #20232a; }
-.ecl-ft-jsx::after { content: 'JX'; }
-.ecl-ft-ts { background: #3178c6; }
-.ecl-ft-ts::after { content: 'TS'; }
-.ecl-ft-tsx { background: #3178c6; }
-.ecl-ft-tsx::after { content: 'TX'; }
-.ecl-ft-py { background: #3776ab; }
-.ecl-ft-py::after { content: 'Py'; }
-.ecl-ft-java { background: #b07219; }
-.ecl-ft-java::after { content: 'J'; }
-.ecl-ft-kt { background: #a97bff; }
-.ecl-ft-kt::after { content: 'Kt'; }
-.ecl-ft-go { background: #00add8; }
-.ecl-ft-go::after { content: 'Go'; }
-.ecl-ft-rs { background: #dea584; color: #3b2e2a; }
-.ecl-ft-rs::after { content: 'Rs'; }
-.ecl-ft-rb { background: #cc342d; }
-.ecl-ft-rb::after { content: 'Rb'; }
-.ecl-ft-php { background: #777bb4; }
-.ecl-ft-php::after { content: 'P'; }
-.ecl-ft-cs { background: #178600; }
-.ecl-ft-cs::after { content: 'C#'; font-size: 6px; }
-.ecl-ft-cpp { background: #f34b7d; }
-.ecl-ft-cpp::after { content: 'C+'; }
-.ecl-ft-c { background: #555555; }
-.ecl-ft-c::after { content: 'C'; }
-.ecl-ft-h { background: #a8b9cc; color: #1e2a36; }
-.ecl-ft-h::after { content: 'H'; }
-.ecl-ft-hpp { background: #f34b7d; }
-.ecl-ft-hpp::after { content: 'H+'; }
-.ecl-ft-swift { background: #f05138; }
-.ecl-ft-swift::after { content: 'Sw'; }
-.ecl-ft-json { background: #cbcb41; color: #333; }
-.ecl-ft-json::after { content: '{}'; }
-.ecl-ft-xml { background: #e37933; }
-.ecl-ft-xml::after { content: '<>'; }
-.ecl-ft-html { background: #e34c26; }
-.ecl-ft-html::after { content: '<>'; }
-.ecl-ft-css { background: #563d7c; }
-.ecl-ft-css::after { content: '#'; }
-.ecl-ft-scss { background: #c6538c; }
-.ecl-ft-scss::after { content: 'S#'; }
-.ecl-ft-md { background: #083fa1; }
-.ecl-ft-md::after { content: 'M↓'; font-size: 6px; }
-.ecl-ft-yml { background: #cb171e; }
-.ecl-ft-yml::after { content: 'Y'; }
-.ecl-ft-sh { background: #89e051; color: #1a3310; }
-.ecl-ft-sh::after { content: '$>'; }
-.ecl-ft-sql { background: #e38c00; }
-.ecl-ft-sql::after { content: 'Q'; }
-.ecl-ft-svg { background: #ffb13b; color: #333; }
-.ecl-ft-svg::after { content: '◇'; }
-.ecl-ft-image { background: #a074c4; }
-.ecl-ft-image::after { content: '▣'; }
-.ecl-ft-pdf { background: #f40f02; }
-.ecl-ft-pdf::after { content: 'P'; }
-.ecl-ft-txt { background: #6a737d; }
-.ecl-ft-txt::after { content: 'T'; }
-.ecl-ft-props { background: #6d8086; }
-.ecl-ft-props::after { content: '··'; }
-.ecl-ft-toml { background: #9c4221; }
-.ecl-ft-toml::after { content: 'Tm'; }
-.ecl-ft-lock { background: #c0c0c0; color: #333; }
-.ecl-ft-lock::after { content: '🔒'; font-size: 8px; }
-.ecl-ft-vue { background: #41b883; }
-.ecl-ft-vue::after { content: 'V'; }
-.ecl-ft-svelte { background: #ff3e00; }
-.ecl-ft-svelte::after { content: 'S'; }
-.ecl-ft-docker { background: #2496ed; }
-.ecl-ft-docker::after { content: 'Dk'; }
-.ecl-ft-make { background: #427819; }
-.ecl-ft-make::after { content: 'Mk'; }
-.ecl-ft-npm { background: #cb3837; }
-.ecl-ft-npm::after { content: 'N'; }
-.ecl-ft-tsconfig { background: #3178c6; }
-.ecl-ft-tsconfig::after { content: 'TS'; }
-.ecl-ft-git { background: #f05032; }
-.ecl-ft-git::after { content: 'G'; }
-.ecl-ft-build { background: #02303a; }
-.ecl-ft-build::after { content: '⚙'; font-size: 8px; }
-.ecl-ft-env { background: #ecd53f; color: #333; }
-.ecl-ft-env::after { content: 'E'; }
-.ecl-ft-license { background: #d1b344; color: #333; }
-.ecl-ft-license::after { content: '©'; }
-.ecl-ft-file { background: #f5f5f5; color: #666; border: 1px solid #bbb; }
-.ecl-ft-file::after { content: '▾'; font-size: 8px; transform: rotate(-90deg); }
+.ecl-ft-js {
+  background: #f7df1e;
+  color: #323330;
+}
+
+.ecl-ft-js::after {
+  content: 'JS';
+}
+
+.ecl-ft-jsx {
+  background: #61dafb;
+  color: #20232a;
+}
+
+.ecl-ft-jsx::after {
+  content: 'JX';
+}
+
+.ecl-ft-ts {
+  background: #3178c6;
+}
+
+.ecl-ft-ts::after {
+  content: 'TS';
+}
+
+.ecl-ft-tsx {
+  background: #3178c6;
+}
+
+.ecl-ft-tsx::after {
+  content: 'TX';
+}
+
+.ecl-ft-py {
+  background: #3776ab;
+}
+
+.ecl-ft-py::after {
+  content: 'Py';
+}
+
+.ecl-ft-java {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 1h8l4 4v10H2z' fill='%23ffffff' stroke='%2378909c' stroke-width='0.8'/%3E%3Cpath d='M10 1v4h4' fill='%23cfd8dc' stroke='%2378909c' stroke-width='0.8'/%3E%3Ccircle cx='7.5' cy='9' r='3.8' fill='%232e7d32'/%3E%3Ctext x='7.5' y='11.5' font-family='Arial,sans-serif' font-size='5.5' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3EC%3C/text%3E%3C/svg%3E") center/contain no-repeat !important;
+  border: none !important;
+}
+
+.ecl-ft-java::after {
+  content: '' !important;
+}
+
+.ecl-ft-kt {
+  background: #a97bff;
+}
+
+.ecl-ft-kt::after {
+  content: 'Kt';
+}
+
+.ecl-ft-go {
+  background: #00add8;
+}
+
+.ecl-ft-go::after {
+  content: 'Go';
+}
+
+.ecl-ft-rs {
+  background: #dea584;
+  color: #3b2e2a;
+}
+
+.ecl-ft-rs::after {
+  content: 'Rs';
+}
+
+.ecl-ft-rb {
+  background: #cc342d;
+}
+
+.ecl-ft-rb::after {
+  content: 'Rb';
+}
+
+.ecl-ft-php {
+  background: #777bb4;
+}
+
+.ecl-ft-php::after {
+  content: 'P';
+}
+
+.ecl-ft-cs {
+  background: #178600;
+}
+
+.ecl-ft-cs::after {
+  content: 'C#';
+  font-size: 6px;
+}
+
+.ecl-ft-cpp {
+  background: #f34b7d;
+}
+
+.ecl-ft-cpp::after {
+  content: 'C+';
+}
+
+.ecl-ft-c {
+  background: #555555;
+}
+
+.ecl-ft-c::after {
+  content: 'C';
+}
+
+.ecl-ft-h {
+  background: #a8b9cc;
+  color: #1e2a36;
+}
+
+.ecl-ft-h::after {
+  content: 'H';
+}
+
+.ecl-ft-hpp {
+  background: #f34b7d;
+}
+
+.ecl-ft-hpp::after {
+  content: 'H+';
+}
+
+.ecl-ft-swift {
+  background: #f05138;
+}
+
+.ecl-ft-swift::after {
+  content: 'Sw';
+}
+
+.ecl-ft-json {
+  background: #cbcb41;
+  color: #333;
+}
+
+.ecl-ft-json::after {
+  content: '{}';
+}
+
+.ecl-ft-xml {
+  background: #e37933;
+}
+
+.ecl-ft-xml::after {
+  content: '<>';
+}
+
+.ecl-ft-html {
+  background: #e34c26;
+}
+
+.ecl-ft-html::after {
+  content: '<>';
+}
+
+.ecl-ft-css {
+  background: #563d7c;
+}
+
+.ecl-ft-css::after {
+  content: '#';
+}
+
+.ecl-ft-scss {
+  background: #c6538c;
+}
+
+.ecl-ft-scss::after {
+  content: 'S#';
+}
+
+.ecl-ft-md {
+  background: #083fa1;
+}
+
+.ecl-ft-md::after {
+  content: 'M↓';
+  font-size: 6px;
+}
+
+.ecl-ft-yml {
+  background: #cb171e;
+}
+
+.ecl-ft-yml::after {
+  content: 'Y';
+}
+
+.ecl-ft-sh {
+  background: #89e051;
+  color: #1a3310;
+}
+
+.ecl-ft-sh::after {
+  content: '$>';
+}
+
+.ecl-ft-sql {
+  background: #e38c00;
+}
+
+.ecl-ft-sql::after {
+  content: 'Q';
+}
+
+.ecl-ft-svg {
+  background: #ffb13b;
+  color: #333;
+}
+
+.ecl-ft-svg::after {
+  content: '◇';
+}
+
+.ecl-ft-image {
+  background: #a074c4;
+}
+
+.ecl-ft-image::after {
+  content: '▣';
+}
+
+.ecl-ft-pdf {
+  background: #f40f02;
+}
+
+.ecl-ft-pdf::after {
+  content: 'P';
+}
+
+.ecl-ft-txt {
+  background: #6a737d;
+}
+
+.ecl-ft-txt::after {
+  content: 'T';
+}
+
+.ecl-ft-props {
+  background: #6d8086;
+}
+
+.ecl-ft-props::after {
+  content: '··';
+}
+
+.ecl-ft-toml {
+  background: #9c4221;
+}
+
+.ecl-ft-toml::after {
+  content: 'Tm';
+}
+
+.ecl-ft-lock {
+  background: #c0c0c0;
+  color: #333;
+}
+
+.ecl-ft-lock::after {
+  content: '🔒';
+  font-size: 8px;
+}
+
+.ecl-ft-vue {
+  background: #41b883;
+}
+
+.ecl-ft-vue::after {
+  content: 'V';
+}
+
+.ecl-ft-svelte {
+  background: #ff3e00;
+}
+
+.ecl-ft-svelte::after {
+  content: 'S';
+}
+
+.ecl-ft-docker {
+  background: #2496ed;
+}
+
+.ecl-ft-docker::after {
+  content: 'Dk';
+}
+
+.ecl-ft-make {
+  background: #427819;
+}
+
+.ecl-ft-make::after {
+  content: 'Mk';
+}
+
+.ecl-ft-npm {
+  background: #cb3837;
+}
+
+.ecl-ft-npm::after {
+  content: 'N';
+}
+
+.ecl-ft-tsconfig {
+  background: #3178c6;
+}
+
+.ecl-ft-tsconfig::after {
+  content: 'TS';
+}
+
+.ecl-ft-git {
+  background: #f05032;
+}
+
+.ecl-ft-git::after {
+  content: 'G';
+}
+
+.ecl-ft-build {
+  background: #02303a;
+}
+
+.ecl-ft-build::after {
+  content: '⚙';
+  font-size: 8px;
+}
+
+.ecl-ft-env {
+  background: #ecd53f;
+  color: #333;
+}
+
+.ecl-ft-env::after {
+  content: 'E';
+}
+
+.ecl-ft-license {
+  background: #d1b344;
+  color: #333;
+}
+
+.ecl-ft-license::after {
+  content: '©';
+}
+
+.ecl-ft-file {
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #bbb;
+}
+
+.ecl-ft-file::after {
+  content: '▾';
+  font-size: 8px;
+  transform: rotate(-90deg);
+}
 
 .ecl-tree-name {
   overflow: hidden;
@@ -1167,6 +1457,79 @@
 
 .ecl-code-scroll pre {
   margin: 0 !important;
+  font-family: var(--ecl-mono) !important;
+  font-size: 12.5px !important;
+  line-height: 18.5px !important;
+}
+
+.ecl-code-scroll code {
+  font-family: var(--ecl-mono) !important;
+  font-size: 12.5px !important;
+  line-height: 18.5px !important;
+}
+
+/* Eclipse Java Syntax Highlighting Rules */
+.ecl-code-scroll .token.keyword,
+.ecl-code-scroll span.token.keyword {
+  color: #7f0055 !important;
+  font-weight: bold !important;
+}
+
+.ecl-code-scroll .token.annotation,
+.ecl-code-scroll .token.decorator,
+.ecl-code-scroll .token.attr-name,
+.ecl-code-scroll .token.builtin {
+  color: #646464 !important;
+  font-weight: normal !important;
+}
+
+.ecl-code-scroll .token.string {
+  color: #2a00ff !important;
+}
+
+.ecl-code-scroll .token.comment,
+.ecl-code-scroll .token.prolog,
+.ecl-code-scroll .token.doctype,
+.ecl-code-scroll .token.cdata {
+  color: #3f7f5f !important;
+  font-style: italic !important;
+}
+
+.ecl-code-scroll .token.class-name {
+  color: #000000 !important;
+}
+
+.ecl-code-scroll .token.variable,
+.ecl-code-scroll .token.property {
+  color: #0000c0 !important;
+}
+
+
+.ecl-image-pane {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  cursor: default;
+  background:
+    linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+    linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color: #fafafa;
+}
+
+.ecl-image-pane img {
+  max-width: 100%;
+  max-height: calc(100vh - 180px);
+  height: auto;
+  object-fit: contain;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  background: #fff;
 }
 
 .ecl-error-banner {
@@ -1451,6 +1814,28 @@
   border-radius: 3px;
   font-family: var(--ecl-mono);
   font-size: 0.9em;
+}
+
+.ecl-markdown img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 12px 0;
+}
+
+.ecl-md-img-ph {
+  display: inline-block;
+  margin: 8px 0;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--ecl-text-muted);
+  background: #f5f5f5;
+  border: 1px dashed var(--ecl-border-soft);
+  border-radius: 3px;
+}
+
+.ecl-md-img-ph.error {
+  color: #a33;
 }
 
 .ecl-markdown pre {

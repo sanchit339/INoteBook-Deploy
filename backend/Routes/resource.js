@@ -10,6 +10,32 @@ const {
 const UPSTREAM_API = 'https://api.github.com';
 const UPSTREAM_RAW = 'https://raw.githubusercontent.com';
 
+/** Stay under Vercel Hobby ~4.5MB response after AES-GCM + base64. */
+const MAX_IMAGE_BYTES = Math.floor(2.5 * 1024 * 1024);
+
+const MIME_BY_EXT = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  ico: 'image/x-icon',
+  bmp: 'image/bmp',
+  avif: 'image/avif',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
+};
+
+const IMAGE_HOSTS = new Set([
+  'raw.githubusercontent.com',
+  'user-images.githubusercontent.com',
+  'objects.githubusercontent.com',
+  'media.githubusercontent.com',
+  'camo.githubusercontent.com',
+  'github.com',
+]);
+
 const noStore = (res) => {
   res.set({
     'Cache-Control': 'no-store, no-cache, must-revalidate, private',
@@ -17,6 +43,115 @@ const noStore = (res) => {
     Expires: '0',
     'X-Content-Type-Options': 'nosniff',
   });
+};
+
+const upstreamHeaders = (extra = {}) => {
+  const headers = {
+    'User-Agent': 'ResourceProxy/1.0',
+    ...extra,
+  };
+  if (process.env.GITHUB_TOKEN || process.env.RESOURCE_TOKEN) {
+    headers.Authorization = `token ${process.env.GITHUB_TOKEN || process.env.RESOURCE_TOKEN}`;
+  }
+  return headers;
+};
+
+const throwUpstream = (status) => {
+  const err = new Error('upstream');
+  err.status = status;
+  throw err;
+};
+
+const getExt = (filePath) => {
+  const base = String(filePath || '').split('/').pop() || '';
+  const i = base.lastIndexOf('.');
+  if (i < 0) return '';
+  return base.slice(i + 1).toLowerCase();
+};
+
+const isSafeSegment = (value) =>
+  typeof value === 'string' &&
+  value.length > 0 &&
+  !value.includes('/') &&
+  !value.includes('\\') &&
+  !value.includes('..') &&
+  !value.includes('?') &&
+  !value.includes('#');
+
+/** Collapse `.` / `..` and reject escapes above repo root. */
+const normalizeRepoPath = (filePath) => {
+  const raw = String(filePath || '').replace(/\\/g, '/');
+  const parts = [];
+  for (const part of raw.split('/')) {
+    if (!part || part === '.') continue;
+    if (part === '..') {
+      if (parts.length === 0) return null;
+      parts.pop();
+      continue;
+    }
+    if (part.includes('..')) return null;
+    parts.push(part);
+  }
+  return parts.join('/') || null;
+};
+
+const encodeRepoPath = (filePath) =>
+  String(filePath)
+    .split('/')
+    .map((seg) => encodeURIComponent(seg))
+    .join('/');
+
+const encodeBranch = (branch) =>
+  String(branch)
+    .split('/')
+    .map((seg) => encodeURIComponent(seg))
+    .join('/');
+
+const buildRawUrl = (owner, name, branch, filePath) =>
+  `${UPSTREAM_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${encodeBranch(branch)}/${encodeRepoPath(filePath)}`;
+
+const resolveMime = (filePath, contentType) => {
+  const ct = String(contentType || '').split(';')[0].trim().toLowerCase();
+  if (ct.startsWith('image/')) return ct;
+  return MIME_BY_EXT[getExt(filePath)] || ct || 'application/octet-stream';
+};
+
+/**
+ * Allowlisted GitHub image hosts only (no open proxy).
+ * github.com blob/raw URLs are rewritten to raw.githubusercontent.com.
+ */
+const rewriteGithubImageUrl = (urlStr) => {
+  let u;
+  try {
+    u = new URL(String(urlStr));
+  } catch (_) {
+    return null;
+  }
+  if (u.protocol !== 'https:') return null;
+  const host = u.hostname.toLowerCase();
+  if (!IMAGE_HOSTS.has(host)) return null;
+
+  if (host === 'github.com') {
+    const m = u.pathname.match(/^\/([^/]+)\/([^/]+)\/(blob|raw)\/([^/]+)\/(.+)$/);
+    if (!m) return null;
+    const filePath = normalizeRepoPath(m[5]);
+    if (!isSafeSegment(m[1]) || !isSafeSegment(m[2]) || !isSafeSegment(m[4]) || !filePath) {
+      return null;
+    }
+    return buildRawUrl(m[1], m[2], m[4], filePath);
+  }
+
+  if (host === 'raw.githubusercontent.com') {
+    const parts = u.pathname.replace(/^\//, '').split('/');
+    if (parts.length < 4) return null;
+    const filePath = normalizeRepoPath(parts.slice(3).join('/'));
+    if (!isSafeSegment(parts[0]) || !isSafeSegment(parts[1]) || !isSafeSegment(parts[2]) || !filePath) {
+      return null;
+    }
+    return buildRawUrl(parts[0], parts[1], parts[2], filePath);
+  }
+
+  return `https://${host}${u.pathname}${u.search || ''}`;
 };
 
 const fetchUpstreamJson = async (url) => {
@@ -56,9 +191,70 @@ const fetchUpstreamText = async (url) => {
   return response.text();
 };
 
+const isAllowedImageHost = (hostname) => {
+  const host = String(hostname || '').toLowerCase();
+  return IMAGE_HOSTS.has(host) || host.endsWith('.githubusercontent.com');
+};
+
+const fetchUpstreamBinary = async (url) => {
+  const response = await fetch(url, { headers: upstreamHeaders(), redirect: 'follow' });
+  if (!response.ok) throwUpstream(response.status);
+
+  try {
+    const finalHost = new URL(response.url).hostname;
+    if (!isAllowedImageHost(finalHost)) throwUpstream(400);
+  } catch (err) {
+    if (err && err.status) throw err;
+    throwUpstream(400);
+  }
+
+  const declared = Number(response.headers.get('content-length'));
+  if (Number.isFinite(declared) && declared > MAX_IMAGE_BYTES) {
+    throwUpstream(413);
+  }
+
+  const buf = Buffer.from(await response.arrayBuffer());
+  if (buf.length > MAX_IMAGE_BYTES) throwUpstream(413);
+
+  const contentType = (response.headers.get('content-type') || '').split(';')[0].trim();
+  return { buf, contentType };
+};
+
+const fetchImageResult = async ({ owner, name, branch, filePath, url }) => {
+  let fetchUrl;
+  let mimePath = filePath || '';
+
+  if (url) {
+    fetchUrl = rewriteGithubImageUrl(url);
+    if (!fetchUrl) {
+      const err = new Error('Invalid image url');
+      err.status = 400;
+      err.clientError = 'Invalid image url';
+      throw err;
+    }
+    try {
+      mimePath = decodeURIComponent(new URL(fetchUrl).pathname.split('/').pop() || '');
+    } catch (_) {
+      mimePath = '';
+    }
+  } else {
+    fetchUrl = buildRawUrl(owner, name, branch, filePath);
+    mimePath = filePath;
+  }
+
+  const { buf, contentType } = await fetchUpstreamBinary(fetchUrl);
+  return {
+    path: filePath || '',
+    encoding: 'base64',
+    mime: resolveMime(mimePath, contentType),
+    content: buf.toString('base64'),
+  };
+};
+
 const mapUpstreamError = (status) => {
   if (status === 404) return { status: 404, error: 'Project or resource not found' };
   if (status === 403) return { status: 403, error: 'Request limit exceeded. Try again later.' };
+  if (status === 413) return { status: 413, error: 'Image is too large to load' };
   return { status: status || 502, error: 'Upstream resource error' };
 };
 
@@ -91,6 +287,8 @@ router.get('/boot', (req, res) => {
  *   { op: 'project', owner, name }
  *   { op: 'tree', owner, name, branch? }
  *   { op: 'file', owner, name, branch, path }
+ *   { op: 'image', owner, name, branch, path }  — binary (base64)
+ *   { op: 'image', url }                        — allowlisted GitHub image CDN
  */
 router.post('/invoke', async (req, res) => {
   noStore(res);
@@ -159,6 +357,18 @@ router.post('/invoke', async (req, res) => {
         `${UPSTREAM_RAW}/${owner}/${name}/${branch}/${filePath}`
       );
       result = { path: filePath, content };
+    } else if (op === 'image') {
+      const { owner, name, branch, url } = payload;
+      if (url) {
+        result = await fetchImageResult({ url });
+      } else {
+        const filePath = normalizeRepoPath(payload.path);
+        if (!owner || !name || !branch || !filePath) {
+          const enc = encryptResponse(aesKey, { error: 'Invalid file request' });
+          return res.status(400).json(enc);
+        }
+        result = await fetchImageResult({ owner, name, branch, filePath });
+      }
     } else {
       const enc = encryptResponse(aesKey, { error: 'Unknown operation' });
       return res.status(400).json(enc);
@@ -169,7 +379,8 @@ router.post('/invoke', async (req, res) => {
     if (aesKey) {
       if (error && error.status) {
         const mapped = mapUpstreamError(error.status);
-        return res.status(mapped.status).json(encryptResponse(aesKey, { error: mapped.error }));
+        const message = error.clientError || mapped.error;
+        return res.status(mapped.status).json(encryptResponse(aesKey, { error: message }));
       }
       if (error && error.message === 'Malformed envelope') {
         return res.status(401).json({ error: 'Session expired', code: 'REBOOT' });
