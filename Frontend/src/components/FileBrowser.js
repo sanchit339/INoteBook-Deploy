@@ -1383,7 +1383,7 @@ const FileBrowser = () => {
     const javaType =
       /^\s*(?:(?:public|private|protected|static|final|abstract|sealed|non-sealed)\s+)*(class|interface|enum|record)\s+([A-Za-z0-9_]+)/;
     const javaMember =
-      /^\s*(?:(?:public|private|protected|static|final|abstract|synchronized|native|default|volatile|transient)\s+)+([\w.<>,\[\]?]+\s+)+([A-Za-z_][A-Za-z0-9_]*)\s*(\(|;|=)/;
+      /^\s*(?:(?:public|private|protected|static|final|abstract|synchronized|native|default|volatile|transient)\s+)+([\w.<>,[\]?]+\s+)+([A-Za-z_][A-Za-z0-9_]*)\s*(\(|;|=)/;
     const jsFn =
       /^\s*(?:export\s+)?(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z0-9_$]+)/;
     const pyFn = /^\s*(?:async\s+)?(?:def|class)\s+([A-Za-z0-9_]+)/;
@@ -1391,7 +1391,7 @@ const FileBrowser = () => {
     const goFn = /^\s*(?:func|type|package)\s+([A-Za-z0-9_]+)/;
 
     lines.forEach((line, idx) => {
-      if (/^\s*\/\//.test(line) || /^\s*\*/.test(line) || /^\s*#/.test(line) && !heading.test(line)) {
+      if (/^\s*\/\//.test(line) || /^\s*\*/.test(line) || (/^\s*#/.test(line) && !heading.test(line))) {
         return;
       }
       let m = line.match(javaType);
